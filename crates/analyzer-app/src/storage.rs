@@ -32,7 +32,7 @@ pub(crate) fn decode<T: DeserializeOwned>(v: String) -> Result<T> {
 }
 pub(crate) fn page_limit(limit: usize) -> Result<()> {
     if !(1..=1000).contains(&limit) {
-        bail!("分页大小必须为 1 到 1000");
+        bail!("Page size must be between 1 and 1000");
     }
     Ok(())
 }
@@ -132,7 +132,7 @@ impl Database {
     pub fn lock(&self) -> Result<MutexGuard<'_, Connection>> {
         self.connection
             .lock()
-            .map_err(|_| anyhow!("项目数据库不可用"))
+            .map_err(|_| anyhow!("The project database is unavailable"))
     }
     pub fn cached_count(
         &self,
@@ -145,7 +145,7 @@ impl Database {
         let mut cache = self
             .read_cache
             .lock()
-            .map_err(|_| anyhow!("分页缓存不可用"))?;
+            .map_err(|_| anyhow!("The pagination cache is unavailable"))?;
         cache.update(revision);
         if let Some(count) = cache.counts.get(&key) {
             return Ok(*count);
@@ -176,7 +176,7 @@ impl Database {
         let mut cache = self
             .read_cache
             .lock()
-            .map_err(|_| anyhow!("分页缓存不可用"))?;
+            .map_err(|_| anyhow!("The pagination cache is unavailable"))?;
         cache.update(revision);
         if cache.pagers.len() >= 32 && !cache.pagers.contains_key(&cache_key) {
             cache.pagers.clear();
@@ -527,7 +527,7 @@ impl Database {
         let mut pager = selection
             .pager
             .lock()
-            .map_err(|_| anyhow!("分页缓存不可用"))?;
+            .map_err(|_| anyhow!("The pagination cache is unavailable"))?;
         let boundary = pager.boundary(
             &c,
             &table,
@@ -682,7 +682,7 @@ impl StoredSelection {
                 .collect::<rusqlite::Result<Vec<String>>>()?;
             let _ = self.ids.set(ids);
         }
-        Ok(self.ids.get().ok_or_else(|| anyhow!("筛选编号读取失败"))?)
+        Ok(self.ids.get().ok_or_else(|| anyhow!("Failed to read selection IDs"))?)
     }
 }
 impl Database {
@@ -861,7 +861,7 @@ impl Database {
         let mut cache = self
             .overview_cache
             .lock()
-            .map_err(|_| anyhow!("项目统计缓存不可用"))?;
+            .map_err(|_| anyhow!("The project statistics cache is unavailable"))?;
         if let Some((old, overview)) = cache.as_ref()
             && *old == revision
         {
@@ -1021,13 +1021,13 @@ impl Database {
             [id],
             |r| r.get::<_, bool>(0),
         )? {
-            bail!("发现不属于当前项目");
+            bail!("The finding does not belong to the current project");
         }
         let revision = crate::project::content_revision(&c)?;
         let mut cache = self
             .read_cache
             .lock()
-            .map_err(|_| anyhow!("引用分页缓存不可用"))?;
+            .map_err(|_| anyhow!("The reference pagination cache is unavailable"))?;
         cache.update(revision);
         c.execute_batch("CREATE TEMP TABLE IF NOT EXISTS page_references(finding_id TEXT NOT NULL,ordinal INTEGER NOT NULL,record_id TEXT NOT NULL,PRIMARY KEY(finding_id,ordinal));")?;
         if !cache.references.contains_key(id) {
@@ -1119,7 +1119,7 @@ impl Database {
         let mut cache = self
             .diagnostic_count_cache
             .lock()
-            .map_err(|_| anyhow!("诊断统计缓存不可用"))?;
+            .map_err(|_| anyhow!("The diagnostic count cache is unavailable"))?;
         if let Some((old, count)) = *cache
             && old == last
         {
@@ -1140,7 +1140,7 @@ impl Database {
         let mut cache = self
             .diagnostic_level_cache
             .lock()
-            .map_err(|_| anyhow!("诊断统计缓存不可用"))?;
+            .map_err(|_| anyhow!("The diagnostic count cache is unavailable"))?;
         if let Some((old, counts)) = *cache
             && old == last
         {
@@ -1181,7 +1181,7 @@ impl Database {
             let mut cached = selection
                 .flow_index
                 .lock()
-                .map_err(|_| anyhow!("会话分页缓存不可用"))?;
+                .map_err(|_| anyhow!("The network session pagination cache is unavailable"))?;
             if cached.as_ref().is_none_or(|(old, _)| *old != revision) {
                 c.execute_batch("CREATE TEMP TABLE IF NOT EXISTS page_flows(selection_id INTEGER NOT NULL,ordinal INTEGER NOT NULL,flow_id INTEGER NOT NULL,matched INTEGER NOT NULL,PRIMARY KEY(selection_id,ordinal));")?;
                 let membership = selection.membership();
@@ -1250,7 +1250,7 @@ impl Database {
             &format!("SELECT COUNT(*) FROM flows WHERE ordinal={}", key + 1),
         )? == 0
         {
-            bail!("会话不存在");
+            bail!("The network session does not exist");
         }
         tx.execute("INSERT INTO selections VALUES(NULL,0)", [])?;
         let id = tx.last_insert_rowid();
@@ -1313,7 +1313,7 @@ impl Database {
         let mut cache = self
             .process_cache
             .lock()
-            .map_err(|_| anyhow!("进程树缓存不可用"))?;
+            .map_err(|_| anyhow!("The process tree cache is unavailable"))?;
         if let Some((old, forest)) = cache.as_ref()
             && *old == last
         {

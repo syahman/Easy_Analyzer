@@ -1,10 +1,11 @@
 export function AiLocalSummary({ text }: { text: string }) {
   return (
     <details className="local-ai-summary">
-      <summary>本地结果整理 · 部分完成</summary>
+      <summary>Local result recap · partially completed</summary>
       <p>
-        仅整理成功回复，不代表完成新的 AI
-        关联推理。完整内容仍保留在发现列表和运行历史中。
+        Only successful replies are summarized; this does not add new AI
+        correlation reasoning. Full content remains in the findings list and run
+        history.
       </p>
       <pre>{text}</pre>
     </details>

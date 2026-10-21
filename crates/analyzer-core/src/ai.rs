@@ -85,7 +85,7 @@ impl AiConfig {
                     + 1
             });
             anyhow::anyhow!(
-                "AI 配置文件 TOML 格式或字段不正确（第 {line} 行）：{}；字符串值需要用双引号包围。",
+                "AI config file has invalid TOML format or fields (line {line}): {}; string values must be enclosed in double quotes.",
                 path.display()
             )
         })?;
@@ -104,7 +104,7 @@ impl AiConfig {
             None
         };
         if key.is_none() && self.endpoint()?.host_str() == Some("api.deepseek.com") {
-            bail!("请在 config.toml 的 api_key 字段填写 DeepSeek API 密钥。");
+            bail!("set the DeepSeek API key in the api_key field of config.toml.");
         }
         Ok(key)
     }
@@ -436,10 +436,10 @@ pub fn analyze_prepared_with_context(
         let batch = if let Some(spool) = &spool {
             spool.batch(i)?
         } else {
-            std::mem::take(batches.get_mut(i).context("AI 批次计划不一致")?)
+            std::mem::take(batches.get_mut(i).context("AI batch plan mismatch")?)
         };
         let user = format!(
-            "当前批次 batch: {}\n总证据批次 total_batches: {}\n当前批次记录数: {}\n包含网络原始包及载荷: {}\n\n{}",
+            "Current batch (batch): {}\nTotal evidence batches (total_batches): {}\nRecords in this batch: {}\nIncludes raw network packets and payloads: {}\n\n{}",
             i + 1,
             count,
             batch.len(),
@@ -475,7 +475,7 @@ pub fn analyze_prepared_with_context(
         if let Some(error) = &batch_result.error {
             failed_evidence.push(i + 1);
             failures.push(format!(
-                "AI 第 {}/{} 证据批次失败：{}；已跳过此批次，继续处理其余批次。",
+                "AI evidence batch {}/{} failed: {}; this batch was skipped and the remaining batches continue.",
                 i + 1,
                 count,
                 error
@@ -523,14 +523,14 @@ pub fn analyze_prepared_with_context(
             &mut progress,
         ) {
             failures.push(format!(
-                "跨批汇总未完成：{error:#}；证据批次有效结果与原始回复保留。"
+                "Cross-batch synthesis incomplete: {error:#}; valid evidence batch results and raw replies are retained."
             ));
         }
     }
     let cancelled = ctx.cancellation.is_cancelled();
     if cancelled {
         failures.push(format!(
-            "AI 分析已取消（已完成 {}/{} 请求阶段）；已完成结果和原始回复保存在报告中，后续请求未发送。",
+            "AI analysis cancelled (completed {}/{} of the request phase); completed results and raw replies are saved in the report, and later requests were not sent.",
             run.completed(),
             run.batches
         ));
@@ -570,9 +570,9 @@ impl EvidenceCoverage {
             .take(20)
             .map(usize::to_string)
             .collect::<Vec<_>>()
-            .join("、");
+            .join(", ");
         format!(
-            "范围 {} 条，成功分析 {} 条；证据批次成功 {}/{}，失败 {}，未执行 {}。{}",
+            "Scope {} records, with {} analyzed successfully; evidence batches: {}/{} succeeded, {} failed, {} not executed. {}",
             self.selected,
             self.analyzed,
             self.completed,
@@ -584,9 +584,9 @@ impl EvidenceCoverage {
                 String::new()
             } else {
                 format!(
-                    "失败证据批次：{indices}{}；缺失范围不能视为正常。",
+                    "Failed evidence batches: {indices}{}; missing scope must not be treated as normal.",
                     if self.failed.len() > 20 {
-                        "等（完整列表见运行历史）"
+                        " etc. (full list in run history)"
                     } else {
                         ""
                     }
@@ -607,7 +607,7 @@ fn failure_message(failures: &[String]) -> Option<String> {
         .join("\n");
     if failures.len() > 8 {
         message.push_str(&format!(
-            "\n另有 {} 次失败，完整错误见运行历史。",
+            "\n{} more failures; see the run history for full errors.",
             failures.len() - 8
         ));
     }
@@ -635,15 +635,15 @@ fn local_result_summary(
             .take(5)
             .map(|id| brief(id))
             .collect::<Vec<_>>()
-            .join("、");
+            .join(", ");
         if ids.len() > 5 {
-            value.push_str(&format!("（另 {} 个引用）", ids.len() - 5));
+            value.push_str(&format!(" (+{} more references)", ids.len() - 5));
         }
         value
     }
     let (completed, total, attempted) = request_counts;
     let mut text = format!(
-        "本地结果整理（不是新的 AI 关联推理）\n请求阶段成功 {}/{total}，失败 {}，未执行 {}（含跨批汇总）。\n{}\n仅整理已经通过 JSON 和证据引用校验的成功回复；失败回复不作为发现。\n已校验发现 {} 项，中性线索 {} 项。",
+        "Local result recap (not new AI correlation reasoning)\nRequest phase succeeded {}/{total}, with {} failed and {} not executed (including cross-batch synthesis).\n{}\nOnly successful replies that passed JSON and evidence-reference validation are summarized; failed replies are not findings.\nVerified findings: {}, neutral clues: {}.",
         completed,
         attempted.saturating_sub(completed),
         total.saturating_sub(attempted),
@@ -653,7 +653,7 @@ fn local_result_summary(
     );
     for finding in findings.iter().take(10) {
         text.push_str(&format!(
-            "\n\n• {}\n{}\n证据：{}",
+            "\n\n• {}\n{}\nEvidence: {}",
             brief(&finding.title),
             brief(&finding.description),
             references(&finding.evidence_ids)
@@ -661,7 +661,7 @@ fn local_result_summary(
     }
     for clue in neutral {
         text.push_str(&format!(
-            "\n\n• 中性线索：{}\n{}\n证据：{}",
+            "\n\n• Neutral clue: {}\n{}\nEvidence: {}",
             brief(&clue.title),
             brief(&clue.description),
             references(&clue.evidence_ids)
@@ -669,11 +669,11 @@ fn local_result_summary(
     }
     if findings.len() > 10 || neutral_count > neutral.len() {
         text.push_str(
-            "\n\n此处仅展示部分条目的摘要；完整发现、引用及原始回复保留在报告与运行历史中。",
+            "\n\nOnly partial excerpts are shown here; complete findings, references, and raw replies remain in the report and run history.",
         );
     }
     if coverage.completed == 0 {
-        text.push_str("\n没有已校验的成功证据回复，无法形成内容总结。");
+        text.push_str("\nNo validated successful evidence replies exist, so a content summary cannot be formed.");
     }
     text
 }
@@ -718,7 +718,7 @@ fn send_batch(
             user.to_owned()
         } else {
             format!(
-                "{user}\n上次回复未通过 JSON 或证据校验，这是第 {attempt} 次请求。请只返回完整合法 JSON，保持简洁，正确转义，只引用本次输入的证据编号。"
+                "{user}\nThe previous reply failed JSON or evidence validation; this is request {attempt}. Return only complete valid JSON, keep it concise, escape it correctly, and cite only the evidence IDs in this input."
             )
         };
         if let Some(context) = config.context_tokens {
@@ -733,7 +733,7 @@ fn send_batch(
             };
             if estimate > planning::input_budget(context, config.max_output_tokens).unwrap_or(0) {
                 let error =
-                    "完整请求的保守 token 估算超过输入预算；未发送，也未截断证据".to_owned();
+                    "the conservative token estimate of the full request exceeds the input budget; nothing was sent and no evidence was truncated".to_owned();
                 result.attempts.push(AiAttempt {
                     response: None,
                     error: Some(error.clone()),
@@ -817,7 +817,7 @@ fn synthesize(
     let budget = planning::input_budget(config.context_tokens.unwrap(), config.max_output_tokens)?;
     let capacity = budget
         .checked_sub(planning::estimated_tokens(system, ctx)? + 2048)
-        .context("跨批汇总提示词超过输入预算")?;
+        .context("cross-batch synthesis prompt exceeds the input budget")?;
     let mut failures = vec![];
     // Bounded hierarchical reduction; never silently discard/truncate a clue or an ID.
     for round in 0..4 {
@@ -826,11 +826,11 @@ fn synthesize(
         let mut group = vec![];
         let mut used = 0usize;
         for (i, clue) in clues.into_iter().enumerate() {
-            ctx.tick(Stage::AiPreparing, Some("跨批汇总"), i, None)?;
+            ctx.tick(Stage::AiPreparing, Some("Cross-batch synthesis"), i, None)?;
             let weight =
                 planning::estimated_tokens(&serde_json::to_string(&clue)?, ctx)?.saturating_add(1);
             if weight > capacity {
-                bail!("单条关联线索超过汇总预算，请增大上下文或减小输出上限");
+                bail!("a single correlated clue exceeds the synthesis budget; increase the context or lower the output limit");
             }
             if used.saturating_add(weight) > capacity && !group.is_empty() {
                 groups.push(std::mem::take(&mut group));
@@ -861,7 +861,7 @@ fn synthesize(
                 .flat_map(|f| f.evidence_ids.iter().cloned())
                 .collect();
             let user = format!(
-                "阶段：跨批汇总，第 {} 轮。{} 以下为经过校验的分批发现与中性线索；不是原始日志。本组仅覆盖输入所列证据，不能代表缺失范围。\n{}",
+                "Phase: cross-batch synthesis, round {}. {} The following are validated per-batch findings and neutral clues; they are not raw logs. This group covers only the evidence listed in the input and cannot represent the missing scope.\n{}",
                 round + 1,
                 coverage.description(),
                 serde_json::to_string(&group)?
@@ -875,7 +875,7 @@ fn synthesize(
                 run.batch_results.len() + 1,
                 ProgressEvent {
                     stage: Stage::Ai,
-                    source: Some(format!("跨批汇总（第 {} 轮）", round + 1)),
+                    source: Some(format!("Cross-batch synthesis (round {})", round + 1)),
                     completed: group_index + 1,
                     total: Some(round_batches),
                     attempt: None,
@@ -890,14 +890,14 @@ fn synthesize(
             }
             let Some(parsed) = accepted else {
                 if ctx.cancellation.is_cancelled() {
-                    bail!("已取消");
+                    bail!("Cancelled");
                 }
                 failures.push(format!(
-                    "第 {} 轮汇总分组 {}/{} 失败：{}",
+                    "Round {} synthesis group {}/{} failed: {}",
                     round + 1,
                     group_index + 1,
                     round_batches,
-                    error.unwrap_or_else(|| "无有效回复".into())
+                    error.unwrap_or_else(|| "no valid reply".into())
                 ));
                 // Carry validated input facts forward; never use a failed response as facts.
                 next.extend(group);
@@ -911,14 +911,14 @@ fn synthesize(
         }
         if accepted_groups == 0 {
             bail!(
-                "{}；本轮没有成功汇总回复，停止后续汇总。",
+                "{}; this round produced no successful synthesis reply, so further synthesis is stopped.",
                 failure_message(&failures).unwrap()
             );
         }
         if final_round || next.is_empty() {
             return failure_message(&failures).map_or(Ok(()), |error| {
                 Err(anyhow::anyhow!(
-                    "{error}；其余成功回复及保留线索已继续汇总。"
+                    "{error}; the remaining successful replies and retained clues were still synthesized."
                 ))
             });
         }
@@ -926,7 +926,7 @@ fn synthesize(
     }
     // Represent unfinished synthesis in existing schema, preserving all accepted results.
     run.batches += 1;
-    bail!("关联线索经四轮仍不能收敛到单次预算，未继续请求")
+    bail!("correlated clues did not converge to a single request budget within four rounds, so no further requests were made")
 }
 
 pub fn check(config: &AiConfig) -> Result<()> {
@@ -941,7 +941,7 @@ pub fn check(config: &AiConfig) -> Result<()> {
         config,
         key.as_deref(),
         &system_prompt(&[], false),
-        "连接检查，不提供证据。请返回 JSON：{\"findings\":[]}。",
+        "Connectivity check, no evidence provided. Return JSON: {\"findings\":[]}.",
     )?;
     validate(&response, &HashSet::new())?;
     Ok(())
@@ -1102,7 +1102,7 @@ mod tests {
             RecordData::Log(LogData::default()),
         );
         for record in [&r1, &r2] {
-            let body=json!({"choices":[{"finish_reason":"stop","message":{"content":json!({"findings":[{"severity":"medium","title":"合成发现","description":"仅测试传输","evidence_ids":[record.id],"confidence":0.7,"recommendations":["核查"]}]}).to_string()}}]}).to_string();
+            let body=json!({"choices":[{"finish_reason":"stop","message":{"content":json!({"findings":[{"severity":"medium","title":"Synthesized finding","description":"Transport test only","evidence_ids":[record.id],"confidence":0.7,"recommendations":["Review"]}]}).to_string()}}]}).to_string();
             let (url, join) = mock("200 OK", body, Duration::ZERO);
             let config = AiConfig {
                 base_url: url,
@@ -1153,18 +1153,18 @@ mod tests {
         };
         let clue = AiFinding {
             severity: crate::Severity::Low,
-            title: "中性登录线索".into(),
-            description: "正常登录主机A".into(),
+            title: "Neutral logon clue".into(),
+            description: "Normal logon to host A".into(),
             evidence_ids: vec!["evidence-valid".into()],
             confidence: 0.7,
-            recommendations: vec!["核对".into()],
+            recommendations: vec!["Review".into()],
         };
         let text = local_result_summary(&coverage, &[], 1, &[clue], (2, 4, 4));
-        assert!(text.contains("请求阶段成功 2/4，失败 2，未执行 0"));
-        assert!(text.contains("已校验发现 0 项，中性线索 1 项"));
-        assert!(text.contains("中性登录线索"));
+        assert!(text.contains("Request phase succeeded 2/4, with 2 failed and 0 not executed"));
+        assert!(text.contains("Verified findings: 0, neutral clues: 1"));
+        assert!(text.contains("Neutral logon clue"));
         assert!(text.contains("evidence-valid"));
-        assert!(text.contains("失败证据批次：2"));
-        assert!(text.contains("不是新的 AI 关联推理"));
+        assert!(text.contains("Failed evidence batches: 2"));
+        assert!(text.contains("not new AI correlation reasoning"));
     }
 }

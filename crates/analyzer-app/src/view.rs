@@ -79,7 +79,7 @@ pub struct ProcessRow {
 
 fn page<T>(all: Vec<T>, offset: usize, limit: usize) -> Result<Page<T>> {
     if !(1..=1000).contains(&limit) {
-        bail!("分页大小必须为 1 到 1000");
+        bail!("Page size must be between 1 and 1000");
     }
     let total = all.len();
     Ok(Page {
@@ -91,7 +91,7 @@ fn page<T>(all: Vec<T>, offset: usize, limit: usize) -> Result<Page<T>> {
 
 fn page_slice<T: Clone>(all: &[T], offset: usize, limit: usize) -> Result<Page<T>> {
     if !(1..=1000).contains(&limit) {
-        bail!("分页大小必须为 1 到 1000");
+        bail!("Page size must be between 1 and 1000");
     }
     Ok(Page {
         offset,
@@ -126,7 +126,7 @@ impl AnalysisSession {
                 .0
                 .selections
                 .lock()
-                .map_err(|_| anyhow::anyhow!("筛选缓存不可用"))?;
+                .map_err(|_| anyhow::anyhow!("The filter cache is unavailable"))?;
             if let Some(index) = cache
                 .iter()
                 .position(|(old, f, _)| old == &version && f == filter)
@@ -143,7 +143,7 @@ impl AnalysisSession {
                 .0
                 .selections
                 .lock()
-                .map_err(|_| anyhow::anyhow!("筛选缓存不可用"))?;
+                .map_err(|_| anyhow::anyhow!("The filter cache is unavailable"))?;
             if cache.len() >= 4 {
                 cache.remove(0);
             }
@@ -285,7 +285,7 @@ impl AnalysisSession {
         }
         self.with_report(|r| {
             if !(1..=1000).contains(&limit) {
-                bail!("分页大小必须为 1 到 1000");
+                bail!("Page size must be between 1 and 1000");
             }
             let mut all = Vec::new();
             let mut total = 0;
@@ -402,10 +402,10 @@ impl AnalysisSession {
             let mut cache = db
                 .ai_summary_cache
                 .lock()
-                .map_err(|_| anyhow::anyhow!("AI 摘要缓存不可用"))?;
+                .map_err(|_| anyhow::anyhow!("The AI summary cache is unavailable"))?;
             if cache.as_ref().is_none_or(|(old, _)| *old != revision) {
                 let summaries = crate::storage::with_progress(&c, ctx, || {
-                    let mut stmt = c.prepare("SELECT json_extract(eair_text(json),'$.position'),json_extract(eair_text(json),'$.message') FROM diagnostics WHERE json_extract(eair_text(json),'$.source')='AI 本地整理' AND json_extract(eair_text(json),'$.position') IS NOT NULL ORDER BY ordinal")?;
+                    let mut stmt = c.prepare("SELECT json_extract(eair_text(json),'$.position'),json_extract(eair_text(json),'$.message') FROM diagnostics WHERE json_extract(eair_text(json),'$.source')='AI local recap' AND json_extract(eair_text(json),'$.position') IS NOT NULL ORDER BY ordinal")?;
                     Ok(stmt
                         .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
                         .collect::<rusqlite::Result<BTreeMap<_, _>>>()?)
@@ -426,11 +426,11 @@ impl AnalysisSession {
             for (n, diagnostic) in report.diagnostics.iter().enumerate() {
                 ctx.tick(
                     Stage::Query,
-                    Some("AI 本地整理"),
+                    Some("AI local recap"),
                     n,
                     Some(report.diagnostics.len()),
                 )?;
-                if diagnostic.source == "AI 本地整理"
+                if diagnostic.source == "AI local recap"
                     && let Some(position) = &diagnostic.position
                     && positions.contains(position)
                 {
@@ -544,7 +544,7 @@ impl AnalysisSession {
             let f = r
                 .flows
                 .get(key)
-                .ok_or_else(|| anyhow::anyhow!("会话不存在"))?;
+                .ok_or_else(|| anyhow::anyhow!("The network session does not exist"))?;
             let mut ids = Vec::new();
             for (i, id) in f.evidence_ids.iter().enumerate() {
                 ctx.tick(Stage::Flows, None, i, Some(f.evidence_ids.len()))?;
@@ -640,7 +640,7 @@ impl AnalysisSession {
             let cache = stored
                 .process_rows
                 .lock()
-                .map_err(|_| anyhow::anyhow!("进程分页缓存不可用"))?;
+                .map_err(|_| anyhow::anyhow!("The process pagination cache is unavailable"))?;
             if let Some((old, rows)) = &*cache
                 && *old == version
             {
@@ -659,7 +659,7 @@ impl AnalysisSession {
             let membership = selection
                 .stored
                 .as_ref()
-                .ok_or_else(|| anyhow::anyhow!("筛选不可用"))?
+                .ok_or_else(|| anyhow::anyhow!("Filter unavailable"))?
                 .membership();
             let mut stmt = c.prepare(&format!(
                 "SELECT r.id FROM records r WHERE r.kind='process' AND {}",
@@ -732,7 +732,7 @@ impl AnalysisSession {
             *stored
                 .process_rows
                 .lock()
-                .map_err(|_| anyhow::anyhow!("进程分页缓存不可用"))? =
+                .map_err(|_| anyhow::anyhow!("The process pagination cache is unavailable"))? =
                 Some((version, rows.clone()));
         }
         Ok(rows)
@@ -767,7 +767,7 @@ impl AnalysisSession {
                     .findings
                     .iter()
                     .find(|f| f.id == id)
-                    .ok_or_else(|| anyhow::anyhow!("发现不存在"))?;
+                    .ok_or_else(|| anyhow::anyhow!("The finding does not exist"))?;
                 Ok(Page {
                     offset,
                     total: f.evidence_ids.len(),
@@ -800,7 +800,7 @@ impl AnalysisSession {
         } else {
             self.with_report(|r| r.findings.iter().find(|f| f.id == id).cloned())?
         }
-        .ok_or_else(|| anyhow::anyhow!("发现不存在"))?;
+        .ok_or_else(|| anyhow::anyhow!("The finding does not exist"))?;
         let refs = self.finding_references(id, 0, 100)?;
         finding.evidence_ids = refs.items;
         Ok(FindingPreview {

@@ -55,7 +55,7 @@ pub struct IndicatorMatch {
 fn domain(value: &str) -> Result<String> {
     let value = value.trim_end_matches('.');
     let Host::Domain(host) = Host::parse(value)? else {
-        bail!("不是有效域名");
+        bail!("not a valid domain name");
     };
     if host.is_empty()
         || host.len() > 253
@@ -67,7 +67,7 @@ fn domain(value: &str) -> Result<String> {
                 || !s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
         })
     {
-        bail!("不是有效域名");
+        bail!("not a valid domain name");
     }
     Ok(host.to_ascii_lowercase())
 }
@@ -78,7 +78,7 @@ fn normalized_url(value: &str) -> Result<String> {
         || !url.username().is_empty()
         || url.password().is_some()
     {
-        bail!("URL 必须是完整的 HTTP/HTTPS 地址，且不包含账号密码");
+        bail!("URL must be a complete HTTP/HTTPS address without credentials");
     }
     if let Some(host) = url
         .host_str()
@@ -93,7 +93,7 @@ fn normalized_url(value: &str) -> Result<String> {
 pub fn indicator(value: &str, kind: Option<IocType>, note: &str) -> Result<Indicator> {
     let value = value.trim();
     if value.is_empty() {
-        bail!("IOC 不能为空");
+        bail!("IOC must not be empty");
     }
     let kind = kind.unwrap_or_else(|| {
         if value.parse::<IpAddr>().is_ok() {
@@ -130,7 +130,7 @@ pub fn import_text(text: &str, csv: bool, ctx: &ExecutionContext) -> Result<IocI
         let headers = reader.headers()?.clone();
         let column = |name: &str| headers.iter().position(|h| h.eq_ignore_ascii_case(name));
         let (Some(t), Some(v)) = (column("type"), column("value")) else {
-            bail!("CSV 必须包含 type,value 列");
+            bail!("CSV must contain type,value columns");
         };
         let note = column("note");
         for (i, row) in reader.records().enumerate() {
@@ -145,7 +145,7 @@ pub fn import_text(text: &str, csv: bool, ctx: &ExecutionContext) -> Result<IocI
                     "ip" => IocType::Ip,
                     "domain" => IocType::Domain,
                     "url" => IocType::Url,
-                    _ => bail!("type 必须为 ip、domain 或 url"),
+                    _ => bail!("type must be ip, domain, or url"),
                 };
                 indicator(
                     row.get(v).unwrap_or_default(),

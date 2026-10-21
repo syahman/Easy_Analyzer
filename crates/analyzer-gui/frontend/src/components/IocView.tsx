@@ -88,7 +88,7 @@ export function IocView({
     setWorking(true);
     try {
       const result = await api.importIoc(sessionId, input);
-      setIssues(result.issues.map((e) => `第 ${e.line} 行：${e.message}`));
+      setIssues(result.issues.map((e) => `Line ${e.line}: ${e.message}`));
       await load();
       await onChanged();
       if (input.text) setText("");
@@ -121,7 +121,7 @@ export function IocView({
   return (
     <div className="ioc-page">
       <section className="ioc-input">
-        <h2>添加 IOC</h2>
+        <h2>Add IOCs</h2>
         <Button
           disabled={disabled}
           onClick={() =>
@@ -133,18 +133,18 @@ export function IocView({
               .catch((e) => onError(String(e)))
           }
         >
-          导入 TXT / CSV 文件
+          Import TXT / CSV files
         </Button>
         <label>
-          粘贴清单
+          Paste list
           <textarea
-            aria-label="IOC 清单"
+            aria-label="IOC list"
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={
               csv
-                ? "type,value,note\ndomain,example.com,待核查"
-                : "每行一个 IPv4 / IPv6、域名或完整 HTTP/HTTPS URL"
+                ? "type,value,note\ndomain,example.com,to verify"
+                : "One IPv4 / IPv6, domain, or full HTTP/HTTPS URL per line"
             }
           />
         </label>
@@ -152,48 +152,48 @@ export function IocView({
           <Checkbox
             checked={csv}
             onChange={setCsv}
-            label="CSV 格式（type,value，可选 note）"
+            label="CSV format (type,value, optional note)"
           />
           <Button
             disabled={disabled || !text.trim()}
             onClick={() => void add({ text, csv })}
           >
-            追加粘贴清单
+            Append pasted list
           </Button>
         </div>
         <div className="ioc-manual">
           <select
-            aria-label="IOC 类型"
+            aria-label="IOC type"
             value={kind}
             onChange={(e) => setKind(e.target.value as typeof kind)}
           >
-            <option value="">自动识别</option>
-            <option value="ip">IP 地址</option>
-            <option value="domain">域名</option>
+            <option value="">Auto-detect</option>
+            <option value="ip">IP address</option>
+            <option value="domain">Domain</option>
             <option value="url">URL</option>
           </select>
           <input
-            aria-label="手动 IOC"
+            aria-label="Manual IOC"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="IOC 值"
+            placeholder="IOC value"
           />
           <input
-            aria-label="IOC 说明"
+            aria-label="IOC note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="说明（可选）"
+            placeholder="Note (optional)"
           />
           <Button
             disabled={disabled || !value.trim()}
             onClick={() => void add({ value, note, ...(kind ? { kind } : {}) })}
           >
-            手动添加
+            Add manually
           </Button>
         </div>
         {issues.length > 0 && (
           <div role="alert">
-            有效条目已追加，以下条目无效：
+            Valid entries were appended; the following entries are invalid:
             {issues.map((v, i) => (
               <p key={i}>{v}</p>
             ))}
@@ -201,14 +201,17 @@ export function IocView({
         )}
       </section>
       <section>
-        <h2>项目 IOC 清单</h2>
-        <p>{view?.status.indicators ?? 0} 个 IOC · 统一去重</p>
-        <p>清单、说明和匹配结果仅属于当前项目，随项目保存。</p>
+        <h2>Project IOC list</h2>
+        <p>{view?.status.indicators ?? 0} IOCs · deduplicated</p>
+        <p>
+          The list, notes, and matches belong to this project only and are saved
+          with it.
+        </p>
         <div className="project-actions">
           <Checkbox
             checked={subdomains}
             onChange={setSubdomains}
-            label="域名包含子域名"
+            label="Domains include subdomains"
           />
           <Button
             disabled={disabled || !view?.status.indicators}
@@ -216,29 +219,35 @@ export function IocView({
               void onTask(() => api.scanIoc(sessionId, subdomains))
             }
           >
-            扫描当前项目
+            Scan current project
           </Button>
         </div>
         {view?.status.needs_rescan && (
           <p className="ioc-pending">
-            有新增证据或清单变更尚未扫描，请主动重新扫描。
+            New evidence or list changes have not been scanned yet; rescan
+            manually.
           </p>
         )}
         {view?.status.run && (
           <p>
-            最近扫描：{view.status.run.scanned_records} /{" "}
-            {view.status.run.total_records} 条 ·{" "}
-            {view.status.run.complete ? "已完成" : "未完成，保留有效命中"} ·{" "}
-            {view.status.run.include_subdomains ? "包含子域名" : "精确域名"}
+            Last scan: {view.status.run.scanned_records} /{" "}
+            {view.status.run.total_records} records ·{" "}
+            {view.status.run.complete
+              ? "complete"
+              : "incomplete; valid hits retained"}{" "}
+            ·{" "}
+            {view.status.run.include_subdomains
+              ? "subdomains included"
+              : "exact domains"}
           </p>
         )}
         <div className="ioc-table-scroll" ref={indicatorScroll}>
           <table className="project-table">
             <thead>
               <tr>
-                <th>类型</th>
-                <th>值</th>
-                <th>说明</th>
+                <th>Type</th>
+                <th>Value</th>
+                <th>Note</th>
               </tr>
             </thead>
             <tbody>
@@ -248,7 +257,7 @@ export function IocView({
                   <td className="mono">{i.value}</td>
                   <td>
                     <input
-                      aria-label={`说明 ${i.value}`}
+                      aria-label={`Note ${i.value}`}
                       disabled={disabled}
                       defaultValue={i.note}
                       key={`${i.id}:${i.note}`}
@@ -277,18 +286,18 @@ export function IocView({
               if (next === offset) void load();
               else setOffset(next);
             },
-            "IOC 清单",
+            "IOC list",
           )}
       </section>
       <section>
-        <h2>匹配结果 · 待核查线索</h2>
+        <h2>Match results · leads to verify</h2>
         <div className="ioc-table-scroll" ref={hitScroll}>
           <table className="project-table">
             <thead>
               <tr>
                 <th>IOC</th>
-                <th>匹配值 / 位置</th>
-                <th>证据</th>
+                <th>Matched value / position</th>
+                <th>Evidence</th>
               </tr>
             </thead>
             <tbody>
@@ -303,7 +312,7 @@ export function IocView({
                     <small>
                       {hit.field}
                       {hit.byte_offset !== null
-                        ? ` · 字节偏移 ${hit.byte_offset}`
+                        ? ` · byte offset ${hit.byte_offset}`
                         : ""}
                     </small>
                   </td>
@@ -328,7 +337,7 @@ export function IocView({
               if (next === hitOffset) void load();
               else setHitOffset(next);
             },
-            "IOC 命中",
+            "IOC hits",
           )}
       </section>
     </div>

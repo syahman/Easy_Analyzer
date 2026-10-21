@@ -65,7 +65,7 @@ pub fn command(
         ProjectCommand::Create { path, info } => {
             let mut metadata = ProjectInfo::new(
                 info.name.as_deref().unwrap_or_default(),
-                info.client.as_deref().context("--client 为必填项")?,
+                info.client.as_deref().context("--client is required")?,
             );
             apply(&mut metadata, info);
             let session = ProjectService::create(metadata)?;

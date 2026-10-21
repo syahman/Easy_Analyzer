@@ -15,7 +15,7 @@ export function DataTable<T>({
   selected,
   onSelect,
   loading = false,
-  empty = "当前筛选没有结果",
+  empty = "No results for the current filter",
   onPage,
   onSize,
   limit = 100,
@@ -95,7 +95,7 @@ export function DataTable<T>({
             ) : (
               <Database size={24} strokeWidth={1.3} />
             )}
-            <span>{loading ? "正在读取证据" : empty}</span>
+            <span>{loading ? "Reading evidence" : empty}</span>
           </div>
         )}
       </div>

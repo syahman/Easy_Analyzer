@@ -65,10 +65,10 @@ impl<T> TaskHandle<T> {
         let result = self
             .result
             .recv()
-            .map_err(|_| anyhow!("后台任务未返回结果"))?;
+            .map_err(|_| anyhow!("The background task did not return a result"))?;
         self.worker
             .join()
-            .map_err(|_| anyhow!("后台任务退出失败"))?;
+            .map_err(|_| anyhow!("The background task failed to exit"))?;
         result
     }
     /// Take the result once without blocking the GUI. Do not call wait after taking it.
@@ -76,7 +76,7 @@ impl<T> TaskHandle<T> {
         match self.result.try_recv() {
             Ok(result) => Ok(Some(result)),
             Err(mpsc::TryRecvError::Empty) => Ok(None),
-            Err(mpsc::TryRecvError::Disconnected) => Err(anyhow!("后台任务结果通道已关闭")),
+            Err(mpsc::TryRecvError::Disconnected) => Err(anyhow!("The background task result channel is closed")),
         }
     }
 }
@@ -137,7 +137,7 @@ fn spawn<T: Send + 'static>(
     });
     let worker = thread::spawn(move || {
         let result = catch_unwind(AssertUnwindSafe(|| run(&ctx)))
-            .unwrap_or_else(|_| Err(anyhow!("后台分析任务异常退出")));
+            .unwrap_or_else(|_| Err(anyhow!("The background analysis task exited unexpectedly")));
         let status = match &result {
             Ok(value) => success(value),
             Err(error) if is_cancelled(error) => TaskStatus::Cancelled,

@@ -40,12 +40,15 @@ export function SettingsView({
     <div className="settings-page">
       <div className="settings-scroll">
         <div className="form-section">
-          <h3>配置文件</h3>
-          <p>可使用已有 CLI 配置。只有主动保存才写入磁盘。</p>
+          <h3>Configuration file</h3>
+          <p>
+            An existing CLI configuration can be reused; it is written to disk
+            only when saved.
+          </p>
           <div className="input-action">
             <input
               className="input mono"
-              aria-label="配置文件路径"
+              aria-label="Configuration file path"
               value={path}
               onChange={(e) => onPath(e.target.value)}
               disabled={busy}
@@ -53,25 +56,25 @@ export function SettingsView({
             <Button
               variant="outline"
               size="icon"
-              aria-label="选择配置"
+              aria-label="Pick configuration"
               disabled={busy}
               onClick={onPick}
             >
               <FolderOpen size={15} />
             </Button>
             <Button variant="outline" disabled={busy} onClick={onLoad}>
-              加载
+              Load
             </Button>
           </div>
         </div>
         <div className="form-section">
-          <h3>AI 服务</h3>
-          <p>兼容 OpenAI Chat Completions 的服务与模型。</p>
+          <h3>AI service</h3>
+          <p>Services and models compatible with OpenAI Chat Completions.</p>
           <label className="form-field">
-            服务地址
+            Service URL
             <input
               className="input"
-              aria-label="服务地址"
+              aria-label="Service URL"
               placeholder="https://api.example.com/v1"
               value={draft.base_url}
               disabled={busy}
@@ -79,10 +82,10 @@ export function SettingsView({
             />
           </label>
           <label className="form-field">
-            模型
+            Model
             <input
               className="input"
-              aria-label="模型"
+              aria-label="Model"
               value={draft.model}
               disabled={busy}
               onChange={(e) => onChange({ ...draft, model: e.target.value })}
@@ -90,19 +93,19 @@ export function SettingsView({
           </label>
           <label className="form-field">
             <span>
-              API 密钥{" "}
+              API key{" "}
               <span
                 className={`key-status ${config.api_key_configured ? "configured" : ""}`}
               >
                 {config.api_key_configured ? (
                   <>
                     <CheckCircle2 size={11} />
-                    已配置
+                    Configured
                   </>
                 ) : (
                   <>
                     <KeyRound size={11} />
-                    未配置
+                    Not configured
                   </>
                 )}
               </span>
@@ -110,13 +113,13 @@ export function SettingsView({
             <div className="key-input">
               <input
                 className="input"
-                aria-label="新的 API 密钥"
+                aria-label="New API key"
                 type="password"
                 autoComplete="new-password"
                 placeholder={
                   config.api_key_configured
-                    ? "留空保留现有密钥"
-                    : "输入新的 API 密钥"
+                    ? "Leave blank to keep the existing key"
+                    : "Enter a new API key"
                 }
                 disabled={busy}
                 value={draft.key_value}
@@ -132,7 +135,7 @@ export function SettingsView({
             </div>
           </label>
           <div className="key-actions">
-            <span>已保存的密钥不会返回到界面。</span>
+            <span>The saved key is never returned to the UI.</span>
             {config.api_key_configured && (
               <button
                 disabled={busy}
@@ -144,17 +147,19 @@ export function SettingsView({
                   })
                 }
               >
-                {draft.key_action === "clear" ? "撤销清除" : "清除已有密钥"}
+                {draft.key_action === "clear"
+                  ? "Undo clear"
+                  : "Clear saved key"}
               </button>
             )}
           </div>
         </div>
         <div className="form-section">
-          <h3>发送规划</h3>
+          <h3>Send planning</h3>
           <label className="form-field">
-            规划方式
+            Planning mode
             <Select
-              label="发送规划方式"
+              label="Send planning mode"
               value={draft.context_tokens === null ? "bytes" : "context"}
               disabled={busy}
               onChange={(value) =>
@@ -164,18 +169,21 @@ export function SettingsView({
                 })
               }
               options={[
-                { value: "context", label: "自动：按模型上下文预算" },
-                { value: "bytes", label: "兼容：按批次字节预算" },
+                {
+                  value: "context",
+                  label: "Automatic: budget by model context",
+                },
+                { value: "bytes", label: "Compatible: budget bytes per batch" },
               ]}
             />
           </label>
           {draft.context_tokens !== null && (
             <label className="form-field">
-              模型上下文上限 / token
+              Model context limit / tokens
               <input
                 className="input"
                 type="number"
-                aria-label="模型上下文上限"
+                aria-label="Model context limit"
                 min="4096"
                 step="1024"
                 value={draft.context_tokens}
@@ -187,20 +195,21 @@ export function SettingsView({
             </label>
           )}
           <p>
-            按当前模型和服务的实际上限填写；1M 为 1000000。自动模式预留输出及
-            20% 安全余量，超出预算才分批，分批后汇总关联线索。Token
-            为本地保守估算。
+            Set this to the actual limit of the current model and service; 1M
+            means 1000000. Automatic mode reserves output plus a 20% safety
+            margin, batches only when over budget, then synthesizes clues across
+            batches. Token counts are conservative local estimates.
           </p>
         </div>
         <details className="form-section advanced-settings">
-          <summary>高级参数</summary>
+          <summary>Advanced parameters</summary>
           <div className="advanced-grid">
             <label>
-              超时 / 秒
+              Timeout / seconds
               <input
                 className="input"
                 type="number"
-                aria-label="超时秒数"
+                aria-label="Timeout seconds"
                 value={draft.timeout_seconds}
                 disabled={busy}
                 onChange={(e) =>
@@ -212,7 +221,7 @@ export function SettingsView({
               />
             </label>
             <label>
-              批次字节预算（兼容模式）
+              Batch byte budget (compatible mode)
               <input
                 className="input"
                 type="number"
@@ -224,7 +233,7 @@ export function SettingsView({
               />
             </label>
             <label>
-              输出 token 上限
+              Output token limit
               <input
                 className="input"
                 type="number"
@@ -239,9 +248,9 @@ export function SettingsView({
               />
             </label>
             <label>
-              回复格式
+              Response format
               <Select
-                label="回复格式"
+                label="Response format"
                 value={draft.response_format}
                 disabled={busy}
                 onChange={(response_format) =>
@@ -253,9 +262,9 @@ export function SettingsView({
               />
             </label>
             <label>
-              token 参数
+              Token parameter
               <Select
-                label="token 参数"
+                label="Token parameter"
                 value={draft.token_parameter}
                 disabled={busy}
                 onChange={(token_parameter) =>
@@ -267,10 +276,10 @@ export function SettingsView({
               />
             </label>
             <label className="wide">
-              密钥环境变量
+              Key environment variable
               <input
                 className="input mono"
-                aria-label="密钥环境变量"
+                aria-label="Key environment variable"
                 value={draft.api_key_env}
                 disabled={busy}
                 onChange={(e) =>
@@ -281,23 +290,23 @@ export function SettingsView({
           </div>
         </details>
         <div className="font-credit">
-          中文字体：Noto Sans CJK SC · SIL Open Font License 1.1
+          Chinese font: Noto Sans CJK SC · SIL Open Font License 1.1
           <br />
-          字体随程序提供，使用时无需下载。
+          The font ships with the app; no download is needed.
         </div>
       </div>
       <div className="settings-actions">
         <span className="check-status">{checkStatus}</span>
         <Button variant="ghost" disabled={busy} onClick={onApply}>
-          应用设置
+          Apply settings
         </Button>
         <Button variant="outline" disabled={busy} onClick={onCheck}>
           <PlugZap size={14} />
-          检查连接
+          Check connection
         </Button>
         <Button disabled={busy} onClick={onSave}>
           <Save size={14} />
-          保存配置
+          Save config
         </Button>
       </div>
     </div>

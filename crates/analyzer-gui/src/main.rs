@@ -21,13 +21,13 @@ fn arguments() -> anyhow::Result<Args> {
         match arg.as_str() {
             "--input" => result.inputs.push(
                 args.next()
-                    .ok_or_else(|| anyhow::anyhow!("--input 需要路径"))?
+                    .ok_or_else(|| anyhow::anyhow!("--input requires a path"))?
                     .into(),
             ),
             "--config" => {
                 result.config = Some(
                     args.next()
-                        .ok_or_else(|| anyhow::anyhow!("--config 需要路径"))?
+                        .ok_or_else(|| anyhow::anyhow!("--config requires a path"))?
                         .into(),
                 )
             }
@@ -45,15 +45,15 @@ fn arguments() -> anyhow::Result<Args> {
             }
             "--help" => {
                 println!(
-                    "easy-analyzer-gui [--input 文件]... [--config 配置] [--live-processes]\n合成验收：--qa [--qa-ai] [--narrow] [--temporary]"
+                    "easy-analyzer-gui [--input file]... [--config config] [--live-processes]\nQA acceptance: --qa [--qa-ai] [--narrow] [--temporary]"
                 );
                 std::process::exit(0);
             }
-            _ => anyhow::bail!("未知参数：{arg}"),
+            _ => anyhow::bail!("Unknown argument: {arg}"),
         }
     }
     if result.qa_ai && (!result.qa || result.config.is_none()) {
-        anyhow::bail!("--qa-ai 需要 --qa 和本机回环 --config");
+        anyhow::bail!("--qa-ai requires --qa and a loopback --config");
     }
     Ok(result)
 }
@@ -76,7 +76,7 @@ fn main() -> anyhow::Result<()> {
                 tauri::WebviewUrl::App("index.html".into()),
             )
             .title(if args.qa {
-                "Easy Analyzer · 合成验收"
+                "Easy Analyzer · QA acceptance"
             } else {
                 "Easy Analyzer"
             })

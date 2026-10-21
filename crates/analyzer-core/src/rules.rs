@@ -10,7 +10,7 @@ type LoginKey = (String, String, String, String);
 
 pub fn compile_query(expression: Option<&str>, regex: bool) -> Result<Option<Regex>> {
     if regex && expression.is_none() {
-        anyhow::bail!("正则查询需要表达式");
+        anyhow::bail!("regex query requires an expression");
     }
     expression
         .map(|s| {
@@ -72,7 +72,7 @@ fn finding(
         description,
         evidence_ids: ids,
         confidence,
-        recommendations: vec!["核对原始证据、资产用途及操作时间，结合其他来源确认。".into()],
+        recommendations: vec!["Review the raw evidence, asset purpose, and operation time, and confirm with other sources.".into()],
     }
 }
 fn decoded(s: &str) -> String {
@@ -174,9 +174,9 @@ pub fn analyze_with_context(report: &mut AnalysisReport, ctx: &ExecutionContext)
                     report.findings.push(finding(
                         "process-command",
                         Severity::High,
-                        "进程命令包含高风险特征",
+                        "Process command contains high-risk patterns",
                         format!(
-                            "PID {} ({}) 命令包含编码执行或下载后执行等特征。",
+                            "PID {} ({}) command contains encoded execution, download-and-execute, or similar patterns.",
                             p.pid, p.name
                         ),
                         vec![r.id.clone()],
@@ -193,8 +193,8 @@ pub fn analyze_with_context(report: &mut AnalysisReport, ctx: &ExecutionContext)
                         report.findings.push(finding(
                             "process-temp-path",
                             Severity::Medium,
-                            "进程从临时目录运行",
-                            format!("PID {} 可执行路径：{path}", p.pid),
+                            "Process running from a temporary directory",
+                            format!("PID {} executable path: {path}", p.pid),
                             vec![r.id.clone()],
                             0.6,
                         ));
@@ -220,7 +220,7 @@ pub fn analyze_with_context(report: &mut AnalysisReport, ctx: &ExecutionContext)
                         report.findings.push(finding(
                             "office-shell",
                             Severity::High,
-                            "Office 进程启动脚本解释器",
+                            "Office process spawned a script interpreter",
                             format!("{} ({}) → {} ({})", pp.name, pp.pid, p.name, p.pid),
                             vec![parent.id.clone(), r.id.clone()],
                             0.8,
@@ -235,8 +235,8 @@ pub fn analyze_with_context(report: &mut AnalysisReport, ctx: &ExecutionContext)
                     report.findings.push(finding(
                         "network-web-probe",
                         Severity::Medium,
-                        "流量包含可疑 HTTP 请求",
-                        format!("捕获请求 URI：{uri}"),
+                        "Traffic contains a suspicious HTTP request",
+                        format!("Captured request URI: {uri}"),
                         vec![r.id.clone()],
                         0.7,
                     ));
@@ -281,12 +281,12 @@ pub fn analyze_with_context(report: &mut AnalysisReport, ctx: &ExecutionContext)
         }
         let desc = if !suspicious.is_empty() {
             Some(format!(
-                "{ip} 对账号 {user} 在 5 分钟内有至少 5 次失败登录。"
+                "{ip} had at least 5 failed logons for account {user} within 5 minutes."
             ))
         } else if records.len() >= 10 && timed.len() < records.len() {
             suspicious = records.iter().map(|r| r.id.clone()).collect();
             Some(format!(
-                "{ip} 对账号 {user} 共 {} 次失败登录；没有足够时间字段证明连续攻击。",
+                "{ip} had {} failed logons for account {user}; timestamps do not prove a sustained attack.",
                 records.len()
             ))
         } else {
@@ -296,7 +296,7 @@ pub fn analyze_with_context(report: &mut AnalysisReport, ctx: &ExecutionContext)
             report.findings.push(finding(
                 "login-failures",
                 Severity::High,
-                "重复失败登录",
+                "Repeated login failures",
                 desc,
                 suspicious,
                 0.8,
@@ -327,8 +327,8 @@ pub fn analyze_with_context(report: &mut AnalysisReport, ctx: &ExecutionContext)
                 report.findings.push(finding(
                     "success-after-failures",
                     Severity::High,
-                    "多次失败后登录成功",
-                    format!("{ip} 对账号 {user} 的多次失败后出现成功登录；需核对是否账号失陷。"),
+                    "Login success after multiple failures",
+                    format!("{ip} had a successful logon for account {user} after multiple failures; verify whether the account was compromised."),
                     ids,
                     0.85,
                 ));

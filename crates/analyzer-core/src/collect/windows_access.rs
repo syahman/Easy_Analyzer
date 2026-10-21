@@ -22,7 +22,7 @@ impl Token {
         let mut handle = null_mut();
         // SAFETY: The pseudo process handle is valid and handle is a writable out parameter.
         if unsafe { OpenProcessToken(GetCurrentProcess(), access, &mut handle) } == 0 {
-            return Err(std::io::Error::last_os_error()).context("无法读取 Windows 进程令牌");
+            return Err(std::io::Error::last_os_error()).context("cannot read Windows process token");
         }
         Ok(Self(handle))
     }
@@ -49,7 +49,7 @@ pub fn is_elevated() -> Result<bool> {
         )
     } == 0
     {
-        return Err(std::io::Error::last_os_error()).context("无法确认 Windows 提权状态");
+        return Err(std::io::Error::last_os_error()).context("cannot confirm Windows elevation status");
     }
     Ok(value.TokenIsElevated != 0)
 }
@@ -70,7 +70,7 @@ impl DebugPrivilege {
             match CAPTURE_PRIVILEGE.try_lock() {
                 Ok(lock) => break lock,
                 Err(TryLockError::WouldBlock) => std::thread::sleep(Duration::from_millis(20)),
-                Err(TryLockError::Poisoned(_)) => bail!("进程采集权限锁不可用"),
+                Err(TryLockError::Poisoned(_)) => bail!("process collection privilege lock unavailable"),
             }
         };
         let token = Token::open(TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES)?;
@@ -89,7 +89,7 @@ impl DebugPrivilege {
             LookupPrivilegeValueW(null(), SE_DEBUG_NAME, &mut requested.Privileges[0].Luid)
         } == 0
         {
-            return Err(std::io::Error::last_os_error()).context("无法查找 Windows 调试权限");
+            return Err(std::io::Error::last_os_error()).context("cannot look up Windows debug privilege");
         }
         requested.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
         let mut length = 0;
@@ -109,11 +109,11 @@ impl DebugPrivilege {
         let error = unsafe { GetLastError() };
         if success == 0 {
             return Err(std::io::Error::from_raw_os_error(error as i32))
-                .context("无法启用 Windows 调试权限");
+                .context("cannot enable Windows debug privilege");
         }
         guard.restore = true;
         if error == ERROR_NOT_ALL_ASSIGNED {
-            bail!("当前令牌没有 Windows 调试权限，可通过 UAC 以管理员身份启动后重新采集");
+            bail!("the current token lacks the Windows debug privilege; restart elevated via UAC and recollect");
         }
         Ok(guard)
     }

@@ -4,8 +4,8 @@
   "version": "1.5.1",
   "identifier": "com.easyanalyzer.gui",
   "build": {
-    "beforeDevCommand": "npm --prefix frontend run dev",
-    "beforeBuildCommand": "npm --prefix frontend run build",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
     "devUrl": "http://127.0.0.1:1420",
     "frontendDist": "frontend/dist"
   },
@@ -25,7 +25,7 @@
       "app"
     ],
     "category": "DeveloperTool",
-    "shortDescription": "离线证据分析工作台",
+    "shortDescription": "Offline evidence analysis workbench",
     "macOS": {
       "minimumSystemVersion": "13.0"
     },

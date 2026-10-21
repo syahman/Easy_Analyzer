@@ -53,54 +53,74 @@ describe("offline response commands", () => {
       "aria-selected",
       "true",
     );
-    expect(screen.getByText("24 条命令")).toBeVisible();
-    expect(screen.getByRole("heading", { name: "查看本地账号" })).toBeVisible();
+    expect(screen.getByText("24 commands")).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Show local user accounts" }),
+    ).toBeVisible();
     fireEvent.mouseDown(screen.getByRole("tab", { name: "Linux" }), {
       button: 0,
       ctrlKey: false,
     });
     expect(
-      screen.getByRole("heading", { name: "查看系统账号清单" }),
+      screen.getByRole("heading", { name: "Show system account list" }),
     ).toBeVisible();
     expect(
-      screen.queryByRole("heading", { name: "查看本地账号" }),
+      screen.queryByRole("heading", { name: "Show local user accounts" }),
     ).not.toBeInTheDocument();
   });
 
   it("combines category filtering with case-insensitive title, purpose and command searches", async () => {
     const user = userEvent.setup();
     render(<CommandsView />);
-    await user.click(screen.getByRole("combobox", { name: "命令分类" }));
-    await user.click(screen.getByRole("option", { name: "网络排查" }));
-    expect(screen.getByText("4 条命令")).toBeVisible();
-    fireEvent.change(screen.getByLabelText("搜索应急响应命令"), {
-      target: { value: "get-nettcpconnection" },
-    });
-    expect(screen.getByText("1 条命令")).toBeVisible();
+    await user.click(
+      screen.getByRole("combobox", { name: "Command category" }),
+    );
+    await user.click(screen.getByRole("option", { name: "Network triage" }));
+    expect(screen.getByText("4 commands")).toBeVisible();
+    fireEvent.change(
+      screen.getByLabelText("Search incident response commands"),
+      {
+        target: { value: "get-nettcpconnection" },
+      },
+    );
+    expect(screen.getByText("1 command")).toBeVisible();
     expect(
-      screen.getByRole("heading", { name: "查看 TCP 连接" }),
+      screen.getByRole("heading", { name: "Show TCP connections" }),
     ).toBeVisible();
-    fireEvent.change(screen.getByLabelText("搜索应急响应命令"), {
-      target: { value: "绑定地址" },
-    });
+    fireEvent.change(
+      screen.getByLabelText("Search incident response commands"),
+      {
+        target: { value: "UDP addresses" },
+      },
+    );
     expect(
-      screen.getByRole("heading", { name: "查看 UDP 端点" }),
+      screen.getByRole("heading", { name: "Show UDP endpoints" }),
     ).toBeVisible();
-    fireEvent.change(screen.getByLabelText("搜索应急响应命令"), {
-      target: { value: "DNS 缓存" },
-    });
+    fireEvent.change(
+      screen.getByLabelText("Search incident response commands"),
+      {
+        target: { value: "DNS cache" },
+      },
+    );
     expect(
-      screen.getByRole("heading", { name: "查看 DNS 缓存" }),
+      screen.getByRole("heading", { name: "Show the DNS cache" }),
     ).toBeVisible();
-    fireEvent.change(screen.getByLabelText("搜索应急响应命令"), {
-      target: { value: "<script>no-match</script>" },
-    });
+    fireEvent.change(
+      screen.getByLabelText("Search incident response commands"),
+      {
+        target: { value: "<script>no-match</script>" },
+      },
+    );
     expect(
-      screen.getByText("没有匹配的命令，请调整分类或搜索内容。"),
+      screen.getByText(
+        "No matching commands; adjust the category or search text.",
+      ),
     ).toBeVisible();
     expect(document.querySelector("script")).toBeNull();
-    await user.click(screen.getByRole("button", { name: "清除命令搜索" }));
-    expect(screen.getByText("4 条命令")).toBeVisible();
+    await user.click(
+      screen.getByRole("button", { name: "Clear command search" }),
+    );
+    expect(screen.getByText("4 commands")).toBeVisible();
   });
 
   it("copies the full multiline command without description or altered backslashes", async () => {
@@ -109,33 +129,35 @@ describe("offline response commands", () => {
       (item) => item.id === "windows-run-keys",
     )!;
     fireEvent.click(
-      screen.getByRole("button", { name: `复制 ${command.title}` }),
+      screen.getByRole("button", { name: `Copy ${command.title}` }),
     );
-    await screen.findByText("已复制完整命令");
+    await screen.findByText("Full command copied");
     expect(clipboard.writeText).toHaveBeenCalledExactlyOnceWith(
       command.command,
     );
     expect(command.command).toContain("\n");
     expect(command.command).toContain("HKLM:\\Software");
     expect(
-      screen.getByRole("button", { name: `复制 ${command.title}` }),
-    ).toHaveTextContent("已复制");
+      screen.getByRole("button", { name: `Copy ${command.title}` }),
+    ).toHaveTextContent("Copied");
   });
 
   it("keeps the command selectable and allows retry when the clipboard fails", async () => {
-    clipboard.writeText.mockRejectedValueOnce("剪贴板暂不可用");
+    clipboard.writeText.mockRejectedValueOnce("clipboard unavailable");
     render(<CommandsView />);
-    const button = screen.getByRole("button", { name: "复制 查看系统信息" });
+    const button = screen.getByRole("button", {
+      name: "Copy Show system information",
+    });
     fireEvent.click(button);
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "复制失败：剪贴板暂不可用",
+      "Copy failed: clipboard unavailable",
     );
-    expect(screen.getByLabelText("查看系统信息的命令文本")).toHaveTextContent(
-      "systeminfo",
-    );
+    expect(
+      screen.getByLabelText("Show system information command text"),
+    ).toHaveTextContent("systeminfo");
     expect(button).toBeEnabled();
     fireEvent.click(button);
-    await screen.findByText("已复制完整命令");
+    await screen.findByText("Full command copied");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -148,15 +170,19 @@ describe("offline response commands", () => {
         }),
     );
     render(<CommandsView />);
-    fireEvent.click(screen.getByRole("button", { name: "复制 查看系统信息" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy Show system information" }),
+    );
     fireEvent.mouseDown(screen.getByRole("tab", { name: "Linux" }), {
       button: 0,
       ctrlKey: false,
     });
     complete();
     await waitFor(() =>
-      expect(screen.queryByText("已复制完整命令")).not.toBeInTheDocument(),
+      expect(screen.queryByText("Full command copied")).not.toBeInTheDocument(),
     );
-    expect(screen.getByRole("heading", { name: "查看系统版本" })).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Show OS version" }),
+    ).toBeVisible();
   });
 });

@@ -42,7 +42,7 @@ function Field({
   return (
     <div className="detail-field">
       <span title={originalName}>{name}</span>
-      <div className={mono ? "mono" : ""}>{value || "未知"}</div>
+      <div className={mono ? "mono" : ""}>{value || "Unknown"}</div>
     </div>
   );
 }
@@ -113,12 +113,12 @@ export function Inspector({
       <div className="inspector-heading">
         <span>
           <FileText size={15} />
-          证据详情
+          Evidence details
         </span>
         <Button
           variant="ghost"
           size="icon"
-          aria-label="收起详情"
+          aria-label="Collapse details"
           onClick={onClose}
         >
           <PanelRightClose size={15} />
@@ -131,11 +131,15 @@ export function Inspector({
           ) : (
             <FileText size={30} strokeWidth={1} />
           )}
-          <strong>{loading ? "正在读取证据" : "选择一条发现或证据"}</strong>
+          <strong>
+            {loading
+              ? "Reading evidence"
+              : "Select a finding or evidence record"}
+          </strong>
           <p>
-            核查解释与原始记录，
+            Review the explanation and raw records,
             <br />
-            追溯每一项分析结果。
+            tracing each analysis result.
           </p>
         </div>
       ) : (
@@ -146,26 +150,26 @@ export function Inspector({
             items={
               finding
                 ? [
-                    { value: "explanation", label: "解释" },
-                    { value: "references", label: "证据引用" },
+                    { value: "explanation", label: "Explanation" },
+                    { value: "references", label: "Evidence references" },
                   ]
                 : [
-                    { value: "fields", label: "字段" },
-                    { value: "raw", label: "原文" },
-                    { value: "source", label: "来源" },
-                    ...(onSaveNote ? [{ value: "note", label: "备注" }] : []),
+                    { value: "fields", label: "Fields" },
+                    { value: "raw", label: "Raw" },
+                    { value: "source", label: "Source" },
+                    ...(onSaveNote ? [{ value: "note", label: "Note" }] : []),
                   ]
             }
           />
           <div className="inspector-scroll">
             {loading && finding?.table_preview && (
-              <p className="muted">正在读取发现详情…</p>
+              <p className="muted">Reading finding details…</p>
             )}
             {finding &&
               (tab === "references" || tab === "explanation") &&
               (finding.evidence_count ?? 0) > 100 && (
                 <Pagination
-                  label="证据引用"
+                  label="Evidence references"
                   offset={refOffset}
                   total={finding.evidence_count || 0}
                   limit={100}
@@ -178,9 +182,9 @@ export function Inspector({
             {detail && tab === "note" && onSaveNote && (
               <div className="evidence-note">
                 <label>
-                  证据备注
+                  Evidence note
                   <textarea
-                    aria-label="证据备注"
+                    aria-label="Evidence note"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                   />
@@ -192,7 +196,7 @@ export function Inspector({
                     void onSaveNote(note).finally(() => setSavingNote(false));
                   }}
                 >
-                  保存备注
+                  Save note
                 </Button>
               </div>
             )}
@@ -202,8 +206,8 @@ export function Inspector({
                   <Risk finding={finding} />
                   <span className="small-badge">
                     {finding.origin.startsWith("local:")
-                      ? "本地规则"
-                      : "AI 发现"}
+                      ? "Local rules"
+                      : "AI finding"}
                   </span>
                 </div>
                 <h3>{finding.title}</h3>
@@ -211,7 +215,7 @@ export function Inspector({
                 <div className="detail-section">
                   <h4>
                     <ShieldCheck size={14} />
-                    核查建议
+                    Recommended checks
                   </h4>
                   {finding.recommendations.map((r, i) => (
                     <div className="recommendation" key={i}>
@@ -223,7 +227,7 @@ export function Inspector({
                 <div className="detail-section">
                   <h4>
                     <Link2 size={14} />
-                    关联证据{" "}
+                    Linked evidence{" "}
                     <small>
                       {finding.evidence_count ?? finding.evidence_ids.length}
                     </small>
@@ -239,15 +243,18 @@ export function Inspector({
                     </button>
                   ))}
                 </div>
-                <Field name="发现来源" value={finding.origin} mono />
+                <Field name="Finding origin" value={finding.origin} mono />
                 <div className="detail-note">
-                  分析结果是待核查线索，需结合原始证据确认。
+                  Analysis results are leads to verify; confirm them against the
+                  raw evidence.
                 </div>
               </>
             )}
             {finding && tab === "references" && (
               <>
-                <p className="muted">点击引用跳转并定位原始记录。</p>
+                <p className="muted">
+                  Click a reference to jump to and locate the raw record.
+                </p>
                 {refs.map((id) => (
                   <button
                     className="evidence-link"
@@ -270,12 +277,12 @@ export function Inspector({
                     {basename(detail.source?.path || "")}
                   </span>
                 </div>
-                <Field name="证据编号" value={detail.record.id} mono />
-                <Field name="时间" value={detail.record.timestamp} mono />
-                <Field name="位置" value={detail.record.position} mono />
+                <Field name="Evidence ID" value={detail.record.id} mono />
+                <Field name="Time" value={detail.record.timestamp} mono />
+                <Field name="Position" value={detail.record.position} mono />
                 {fields?.kind === "log" && (
                   <>
-                    <Field name="类别" value={fields.fields.category} />
+                    <Field name="Category" value={fields.fields.category} />
                     {Object.entries(fields.fields.fields).map(([k, v]) => (
                       <Field
                         key={k}
@@ -296,41 +303,41 @@ export function Inspector({
                         mono
                       />
                       <Field
-                        name="父 PID"
+                        name="Parent PID"
                         value={
                           fields.fields.parent_pid === null
-                            ? "未知"
+                            ? "Unknown"
                             : String(fields.fields.parent_pid)
                         }
                         mono
                       />
                     </div>
-                    <Field name="名称" value={fields.fields.name} />
-                    <Field name="路径" value={fields.fields.path} mono />
+                    <Field name="Name" value={fields.fields.name} />
+                    <Field name="Path" value={fields.fields.path} mono />
                     <Field
-                      name="命令行"
+                      name="Command line"
                       value={fields.fields.command.join(" ")}
                       mono
                     />
-                    <Field name="用户" value={fields.fields.user} />
+                    <Field name="User" value={fields.fields.user} />
                   </>
                 )}
                 {fields?.kind === "packet" && (
                   <>
                     <Field
-                      name="源端点"
-                      value={`${fields.fields.source || "未知"}:${fields.fields.source_port ?? "—"}`}
+                      name="Source endpoint"
+                      value={`${fields.fields.source || "Unknown"}:${fields.fields.source_port ?? "—"}`}
                       mono
                     />
                     <Field
-                      name="目标端点"
-                      value={`${fields.fields.destination || "未知"}:${fields.fields.destination_port ?? "—"}`}
+                      name="Destination endpoint"
+                      value={`${fields.fields.destination || "Unknown"}:${fields.fields.destination_port ?? "—"}`}
                       mono
                     />
                     <div className="detail-pair">
-                      <Field name="协议" value={fields.fields.protocol} />
+                      <Field name="Protocol" value={fields.fields.protocol} />
                       <Field
-                        name="字节"
+                        name="Bytes"
                         value={`${fields.fields.captured_bytes} / ${fields.fields.original_bytes}`}
                         mono
                       />
@@ -340,7 +347,7 @@ export function Inspector({
                     ))}
                     {fields.fields.payload_hex && (
                       <details className="raw-reply">
-                        <summary>载荷十六进制</summary>
+                        <summary>Payload hex</summary>
                         <pre>{fields.fields.payload_hex}</pre>
                       </details>
                     )}
@@ -349,7 +356,7 @@ export function Inspector({
                 {detail.related.length > 0 && (
                   <div className="detail-section">
                     <h4>
-                      关联发现 <small>{detail.related.length}</small>
+                      Related findings <small>{detail.related.length}</small>
                     </h4>
                     {detail.related.map((f) => (
                       <button
@@ -369,22 +376,22 @@ export function Inspector({
               <>
                 <div className="detail-note">
                   {fields?.kind === "packet"
-                    ? "原始捕获包 · 十六进制"
-                    : "原始记录 · 按来源保留"}
+                    ? "Raw captured packet · hex"
+                    : "Raw record · preserved as captured"}
                 </div>
                 <pre className="raw-evidence">{detail.record.raw}</pre>
               </>
             )}
             {detail && tab === "source" && (
               <>
-                <Field name="来源路径" value={detail.source?.path} mono />
-                <Field name="格式" value={detail.source?.format} />
+                <Field name="Source path" value={detail.source?.path} mono />
+                <Field name="Format" value={detail.source?.format} />
                 <Field
-                  name="大小"
+                  name="Size"
                   value={detail.source ? bytes(detail.source.bytes) : null}
                 />
                 <Field name="SHA-256" value={detail.source?.sha256} mono />
-                <Field name="来源编号" value={detail.record.source_id} mono />
+                <Field name="Source ID" value={detail.record.source_id} mono />
               </>
             )}
           </div>
@@ -406,12 +413,12 @@ export function SourceInspector({
       <div className="inspector-heading">
         <span>
           <FileText size={15} />
-          来源详情
+          Source details
         </span>
         <Button
           variant="ghost"
           size="icon"
-          aria-label="收起详情"
+          aria-label="Collapse details"
           onClick={onClose}
         >
           <PanelRightClose size={15} />
@@ -422,17 +429,18 @@ export function SourceInspector({
           <span className="small-badge">{source.format}</span>
         </div>
         <h3>{basename(source.path)}</h3>
-        <Field name="完整路径" value={source.path} mono />
-        <Field name="格式" value={source.format} />
+        <Field name="Full path" value={source.path} mono />
+        <Field name="Format" value={source.format} />
         <Field
-          name="大小"
-          value={`${bytes(source.bytes)} · ${source.bytes.toLocaleString()} 字节`}
+          name="Size"
+          value={`${bytes(source.bytes)} · ${source.bytes.toLocaleString()} bytes`}
           mono
         />
         <Field name="SHA-256" value={source.sha256} mono />
-        <Field name="来源编号" value={source.id} mono />
+        <Field name="Source ID" value={source.id} mono />
         <div className="detail-note">
-          哈希基于原始文件计算。导出报告保留全部来源与完整证据。
+          Hashes are computed from the original file. Exported reports keep all
+          sources and complete evidence.
         </div>
       </div>
     </div>

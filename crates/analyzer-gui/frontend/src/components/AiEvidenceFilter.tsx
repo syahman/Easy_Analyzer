@@ -59,8 +59,8 @@ export function AiEvidenceFilter({
       onOpenChange={(open) => {
         if (!open && !busy) onClose();
       }}
-      title="筛选发送证据"
-      description="在本地查询完整证据集合，应用后更新“当前筛选”。此操作不会发送 AI 请求。"
+      title="Filter evidence to send"
+      description="Query the full evidence collection locally; applying it updates the current filter. This does not send AI requests."
       className="ai-filter-dialog"
     >
       <form
@@ -71,14 +71,14 @@ export function AiEvidenceFilter({
       >
         <fieldset disabled={busy}>
           <label className="form-field">
-            证据类型
+            Evidence type
             <Select
-              label="发送证据类型"
+              label="Evidence type to send"
               value={draft.screen}
               options={[
-                { value: "logs", label: "日志" },
-                { value: "processes", label: "进程" },
-                { value: "network", label: "网络数据包" },
+                { value: "logs", label: "Logs" },
+                { value: "processes", label: "Processes" },
+                { value: "network", label: "Network packets" },
               ]}
               onChange={(screen) =>
                 setDraft({
@@ -99,11 +99,11 @@ export function AiEvidenceFilter({
             />
           </label>
           <label className="form-field">
-            关键词或正则表达式
+            Keyword or regular expression
             <input
               className="input"
-              aria-label="发送证据查询"
-              placeholder="输入关键词，留空表示该类型的全部证据"
+              aria-label="Evidence query to send"
+              placeholder="Enter a keyword; leave blank for all evidence of this type"
               value={f.text}
               onChange={(e) => change({ text: e.target.value })}
               onCompositionStart={() => {
@@ -125,13 +125,13 @@ export function AiEvidenceFilter({
           </label>
           <div className="filter-row">
             <Checkbox
-              label="正则表达式"
+              label="Regular expression"
               checked={f.regex}
               onChange={(regex) => change({ regex })}
               disabled={busy}
             />
             <Checkbox
-              label="仅本地可疑项"
+              label="Local suspicious only"
               checked={f.suspicious}
               onChange={(suspicious) => change({ suspicious })}
               disabled={busy}
@@ -139,28 +139,28 @@ export function AiEvidenceFilter({
           </div>
           <div className="ai-filter-fields">
             <Select
-              label="发送证据来源"
+              label="Evidence source to send"
               value={f.source || ""}
               onChange={(source) => change({ source: source || null })}
               options={[
-                { value: "", label: "全部来源" },
+                { value: "", label: "All sources" },
                 ...sources.map((s) => ({
                   value: s.id,
                   label: basename(s.path),
                 })),
                 ...(f.source && !sources.some((s) => s.id === f.source)
-                  ? [{ value: f.source, label: "指定来源" }]
+                  ? [{ value: f.source, label: "Selected source" }]
                   : []),
               ]}
             />
             <Select
-              label="发送证据解析状态"
+              label="Parse status to send"
               value={f.status || ""}
               onChange={(status) =>
                 change({ status: (status as Filters["status"]) || null })
               }
               options={[
-                { value: "", label: "全部状态" },
+                { value: "", label: "All statuses" },
                 ...Object.entries(statusLabel).map(([value, label]) => ({
                   value,
                   label,
@@ -169,11 +169,11 @@ export function AiEvidenceFilter({
             />
             {draft.screen === "logs" && (
               <Select
-                label="发送日志类别"
+                label="Log category to send"
                 value={f.category || ""}
                 onChange={(category) => change({ category: category || null })}
                 options={[
-                  { value: "", label: "全部类别" },
+                  { value: "", label: "All categories" },
                   ...categories.map((value) => ({
                     value,
                     label: logTypeLabel(value),
@@ -183,11 +183,11 @@ export function AiEvidenceFilter({
             )}
             {draft.screen === "network" && (
               <Select
-                label="发送协议"
+                label="Protocol to send"
                 value={f.protocol || ""}
                 onChange={(protocol) => change({ protocol: protocol || null })}
                 options={[
-                  { value: "", label: "全部协议" },
+                  { value: "", label: "All protocols" },
                   ...protocols.map((value) => ({ value, label: value })),
                 ]}
               />
@@ -195,7 +195,7 @@ export function AiEvidenceFilter({
           </div>
           {draft.screen === "logs" && (
             <details className="ai-log-query">
-              <summary>日志多维查询条件</summary>
+              <summary>Multi-dimensional log query conditions</summary>
               <LogQueryFields
                 value={f.log_query}
                 onChange={(log_query) => change({ log_query })}
@@ -205,21 +205,21 @@ export function AiEvidenceFilter({
           )}
           {f.flow !== null && (
             <div className="ai-filter-flow">
-              限定网络会话 #{f.flow + 1}
+              Restricted to network session #{f.flow + 1}
               <Button
                 type="button"
                 size="sm"
                 variant="ghost"
                 onClick={() => change({ flow: null })}
               >
-                移除会话限制
+                Remove session restriction
               </Button>
             </div>
           )}
         </fieldset>
         {error && (
           <div className="warning-note" role="alert">
-            {error}。保留上一次有效筛选。
+            {error}. The last valid filter is kept.
           </div>
         )}
         <div className="dialog-actions">
@@ -229,11 +229,11 @@ export function AiEvidenceFilter({
             disabled={busy}
             onClick={onClose}
           >
-            取消
+            Cancel
           </Button>
           <Button type="submit" disabled={busy}>
             {busy && <LoaderCircle size={14} className="spin" />}
-            {busy ? "正在查询…" : "应用筛选"}
+            {busy ? "Querying…" : "Apply filter"}
           </Button>
         </div>
       </form>

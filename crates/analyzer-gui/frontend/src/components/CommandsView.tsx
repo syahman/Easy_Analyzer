@@ -59,7 +59,10 @@ export function CommandsView() {
         )),
   );
   return (
-    <section className="commands-view" aria-label="应急响应命令库">
+    <section
+      className="commands-view"
+      aria-label="Incident response command reference"
+    >
       <Tabs
         value={platform}
         onChange={(value) => {
@@ -75,8 +78,11 @@ export function CommandsView() {
           <div className="commands-controls">
             <Select
               value={category}
-              label="命令分类"
-              options={[{ value: "", label: "全部分类" }, ...commandCategories]}
+              label="Command category"
+              options={[
+                { value: "", label: "All categories" },
+                ...commandCategories,
+              ]}
               onChange={(value) => {
                 setCategory(value);
                 clearCopy();
@@ -85,8 +91,8 @@ export function CommandsView() {
             <div className="search-input commands-search">
               <Search size={15} aria-hidden="true" />
               <input
-                aria-label="搜索应急响应命令"
-                placeholder="搜索命令名称、用途或命令文本…"
+                aria-label="Search incident response commands"
+                placeholder="Search command names, purposes, or command text…"
                 value={query}
                 onChange={(event) => {
                   setQuery(event.target.value);
@@ -95,7 +101,7 @@ export function CommandsView() {
               />
               {query && (
                 <button
-                  aria-label="清除命令搜索"
+                  aria-label="Clear command search"
                   onClick={() => {
                     setQuery("");
                     clearCopy();
@@ -106,13 +112,13 @@ export function CommandsView() {
               )}
             </div>
             <span className="commands-count" aria-live="polite">
-              {items.length} 条命令
+              {items.length} {items.length === 1 ? "command" : "commands"}
             </span>
           </div>
           <p className="commands-environment">
             {platform === "windows"
-              ? "适用于 Windows 10 / Server 2016 及以上；PowerShell 命令默认使用 64 位 Windows PowerShell 5.1。"
-              : "适用于 Linux Bash；工具、日志路径及 systemd 要求见各命令说明。"}
+              ? "For Windows 10 / Server 2016 and later; PowerShell commands use 64-bit Windows PowerShell 5.1 by default."
+              : "For Linux Bash; tool, log path, and systemd requirements are noted per command."}
           </p>
           <div className="commands-list">
             {items.length ? (
@@ -139,7 +145,7 @@ export function CommandsView() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        aria-label={`复制 ${item.title}`}
+                        aria-label={`Copy ${item.title}`}
                         disabled={copying === item.id}
                         onClick={() => void copy(item)}
                       >
@@ -151,10 +157,10 @@ export function CommandsView() {
                           <Copy size={14} />
                         )}
                         {copying === item.id
-                          ? "复制中"
+                          ? "Copying"
                           : copied
-                            ? "已复制"
-                            : "复制"}
+                            ? "Copied"
+                            : "Copy"}
                       </Button>
                     </div>
                     <p className="command-description">{item.description}</p>
@@ -163,12 +169,12 @@ export function CommandsView() {
                         <Terminal size={12} />
                         {item.shell}
                       </span>
-                      <span>权限：{item.permission}</span>
+                      <span>Permission: {item.permission}</span>
                     </div>
                     <pre
                       className="command-code"
                       tabIndex={0}
-                      aria-label={`${item.title}的命令文本`}
+                      aria-label={`${item.title} command text`}
                     >
                       <code>{item.command}</code>
                     </pre>
@@ -176,12 +182,12 @@ export function CommandsView() {
                     {feedback &&
                       (feedback.error === null ? (
                         <span className="command-feedback" role="status">
-                          已复制完整命令
+                          Full command copied
                         </span>
                       ) : (
                         <p className="command-copy-error" role="alert">
-                          复制失败：{feedback.error}
-                          。可选择上方命令文本手动复制。
+                          Copy failed: {feedback.error}. Select the command text
+                          above to copy manually.
                         </p>
                       ))}
                   </article>
@@ -189,7 +195,7 @@ export function CommandsView() {
               })
             ) : (
               <div className="commands-empty">
-                没有匹配的命令，请调整分类或搜索内容。
+                No matching commands; adjust the category or search text.
               </div>
             )}
           </div>

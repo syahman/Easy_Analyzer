@@ -35,7 +35,7 @@ fn evidence_link(out: &mut String, id: &str, context: &Context<'_>) {
         let source = context
             .sources
             .get(record.source_id.as_str())
-            .map_or_else(|| "未知来源".into(), |(n, _)| format!("S{}", n + 1));
+            .map_or_else(|| "Unknown source".into(), |(n, _)| format!("S{}", n + 1));
         let _ = write!(
             out,
             "<a href=\"#evidence-{index}\">{} · {}</a>",
@@ -45,7 +45,7 @@ fn evidence_link(out: &mut String, id: &str, context: &Context<'_>) {
     } else {
         let _ = write!(
             out,
-            "<span class=\"muted\">未找到记录：{}</span>",
+            "<span class=\"muted\">Record not found: {}</span>",
             escape(id)
         );
     }
@@ -59,7 +59,7 @@ fn links(out: &mut String, ids: &[String], context: &Context<'_>) {
     if ids.len() > 3 {
         let _ = write!(
             out,
-            "<details class=\"subfold\"><summary>展开全部 {} 条证据引用</summary><div class=\"scroll refs evidence-links\">",
+            "<details class=\"subfold\"><summary>Expand all {} evidence references</summary><div class=\"scroll refs evidence-links\">",
             ids.len()
         );
         for id in ids {
@@ -70,7 +70,7 @@ fn links(out: &mut String, ids: &[String], context: &Context<'_>) {
 }
 fn findings(out: &mut String, items: &[(usize, &Finding)], context: &Context<'_>) {
     if items.is_empty() {
-        out.push_str("<div class=\"panel empty\">当前范围未产生可用发现。</div>");
+        out.push_str("<div class=\"panel empty\">No findings were produced for the current scope.</div>");
         return;
     }
     for level in [
@@ -86,7 +86,7 @@ fn findings(out: &mut String, items: &[(usize, &Finding)], context: &Context<'_>
         }
         let _ = write!(
             out,
-            "<details class=\"severity-group\"{}><summary>{}<span>{}项发现</span><span class=\"muted\">展开查看</span></summary><div class=\"group-body\">",
+            "<details class=\"severity-group\"{}><summary>{}<span>{} findings</span><span class=\"muted\">Expand to view</span></summary><div class=\"group-body\">",
             if level.rank() >= 3 { " open" } else { "" },
             badge(&level),
             group.len()
@@ -94,29 +94,29 @@ fn findings(out: &mut String, items: &[(usize, &Finding)], context: &Context<'_>
         for (index, finding) in group {
             let _ = write!(
                 out,
-                "<details class=\"finding\" id=\"finding-{index}\"><summary><span class=\"finding-title\">{}<small>{} · 置信度 {:.0}%</small></span><span class=\"count\">{} 条证据</span></summary><div class=\"finding-body\"><div class=\"reader\"><p>{}</p></div>",
+                "<details class=\"finding\" id=\"finding-{index}\"><summary><span class=\"finding-title\">{}<small>{} · Confidence {:.0}%</small></span><span class=\"count\">{} evidence records</span></summary><div class=\"finding-body\"><div class=\"reader\"><p>{}</p></div>",
                 escape(&finding.title),
                 if finding.origin.starts_with("ai:") {
-                    "AI 发现"
+                    "AI finding"
                 } else {
-                    "本地规则"
+                    "Local rule"
                 },
                 finding.confidence * 100.0,
                 finding.evidence_ids.len(),
                 escape(&finding.description)
             );
             if !finding.recommendations.is_empty() {
-                out.push_str("<h4>建议动作</h4><ul class=\"actions reader\">");
+                out.push_str("<h4>Recommended actions</h4><ul class=\"actions reader\">");
                 for recommendation in &finding.recommendations {
                     let _ = write!(out, "<li>{}</li>", escape(recommendation));
                 }
                 out.push_str("</ul>");
             }
-            out.push_str("<h4>关联证据</h4>");
+            out.push_str("<h4>Linked evidence</h4>");
             links(out, &finding.evidence_ids, context);
             let _ = write!(
                 out,
-                "<small>规则 / 模型：<code>{}</code> · 发现编号：<code>{}</code></small></div></details>",
+                "<small>Rule / model: <code>{}</code> · Finding ID: <code>{}</code></small></div></details>",
                 escape(&finding.origin),
                 escape(&finding.id)
             );
@@ -127,7 +127,7 @@ fn findings(out: &mut String, items: &[(usize, &Finding)], context: &Context<'_>
 fn section(out: &mut String, id: &str, title: &str, subtitle: &str, count: usize) {
     let _ = write!(
         out,
-        "<div class=\"section-head\" id=\"{id}\"><div><h2>{title}</h2><p>{subtitle}</p></div><span>{count} 项</span></div>"
+        "<div class=\"section-head\" id=\"{id}\"><div><h2>{title}</h2><p>{subtitle}</p></div><span>{count} items</span></div>"
     );
 }
 pub(super) fn script_hash() -> String {
@@ -189,31 +189,31 @@ pub fn render(report: &AnalysisReport) -> String {
         .count();
     let incomplete = report.ai_runs.iter().any(|run| !run.is_complete());
     let mut out = format!(
-        "<!doctype html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-{}'; img-src 'none'; base-uri 'none'; form-action 'none'\"><title>Easy Analyzer · 应急响应报告</title><style>{STYLE}</style></head><body><main>",
+        "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-{}'; img-src 'none'; base-uri 'none'; form-action 'none'\"><title>Easy Analyzer · Incident Response Report</title><style>{STYLE}</style></head><body><main>",
         script_hash()
     );
     let _ = write!(
         out,
-        "<header class=\"hero\"><div><div class=\"eyebrow\">EASY ANALYZER / INCIDENT REVIEW</div><h1>应急响应分析报告</h1><p>风险优先，证据可追溯。展开条目查看说明和取证详情。</p></div><div class=\"meta\"><strong>{}</strong>{}<br>离线报告 · 本地规则 {} 项 / AI {} 项</div></header>",
+        "<header class=\"hero\"><div><div class=\"eyebrow\">EASY ANALYZER / INCIDENT REVIEW</div><h1>Incident Response Analysis Report</h1><p>Risk-first with traceable evidence. Expand items to see explanations and forensic details.</p></div><div class=\"meta\"><strong>{}</strong>{}<br>Offline report · Local rules {} / AI {}</div></header>",
         if errors > 0 || incomplete {
-            "分析部分完成"
+            "Analysis partially complete"
         } else {
-            "分析已完成"
+            "Analysis complete"
         },
         escape(&report.generated_at),
         local.len(),
         ai.len()
     );
-    out.push_str("<nav class=\"nav\" aria-label=\"报告导航\"><a href=\"#overview\">概览</a><a href=\"#local\">本地发现</a>");
+    out.push_str("<nav class=\"nav\" aria-label=\"Report navigation\"><a href=\"#overview\">Overview</a><a href=\"#local\">Local findings</a>");
     if has_ai {
-        out.push_str("<a href=\"#ai\">AI 分析</a>");
+        out.push_str("<a href=\"#ai\">AI Analysis</a>");
     }
-    out.push_str("<a href=\"#sources\">来源</a><a href=\"#evidence\">证据</a><a href=\"#diagnostics\">诊断</a></nav><div id=\"overview\" class=\"stats\">");
+    out.push_str("<a href=\"#sources\">Sources</a><a href=\"#evidence\">Evidence</a><a href=\"#diagnostics\">Diagnostics</a></nav><div id=\"overview\" class=\"stats\">");
     for (value, label, class) in [
-        (report.records.len(), "证据记录", ""),
-        (ordered.len(), "分析发现", ""),
-        (counts[4] + counts[3], "严重 / 高危发现", "hot"),
-        (report.sources.len(), "证据来源", ""),
+        (report.records.len(), "Evidence records", ""),
+        (ordered.len(), "Findings", ""),
+        (counts[4] + counts[3], "Critical / High findings", "hot"),
+        (report.sources.len(), "Evidence sources", ""),
     ] {
         let _ = write!(
             out,
@@ -224,12 +224,12 @@ pub fn render(report: &AnalysisReport) -> String {
     if errors > 0 || incomplete {
         let _ = write!(
             out,
-            "<aside class=\"alert\"><strong>部分分析未完成</strong> · {} 条错误。已完成的结果保留在本报告中，未完成范围不能视为已排除风险。<a href=\"#diagnostics\">查看具体原因 →</a></aside>",
+            "<aside class=\"alert\"><strong>Analysis partially incomplete</strong> · {} errors. Completed results are kept in this report; an unfinished scope must not be treated as risk that has been ruled out. <a href=\"#diagnostics\">View specific causes →</a></aside>",
             errors
         );
     }
     out.push_str(
-        "<div class=\"split\"><section class=\"panel\"><h3>优先关注</h3><div class=\"risk-strip\">",
+        "<div class=\"split\"><section class=\"panel\"><h3>Priority focus</h3><div class=\"risk-strip\">",
     );
     for level in [
         Severity::Critical,
@@ -250,52 +250,52 @@ pub fn render(report: &AnalysisReport) -> String {
     for (index, finding) in indexed.iter().take(5) {
         let _ = write!(
             out,
-            "<div class=\"focus-item\">{}<a href=\"#finding-{index}\">{}</a><small>{} 条证据 · {}</small></div>",
+            "<div class=\"focus-item\">{}<a href=\"#finding-{index}\">{}</a><small>{} evidence records · {}</small></div>",
             badge(&finding.severity),
             escape(&finding.title),
             finding.evidence_ids.len(),
             if finding.origin.starts_with("ai:") {
                 "AI"
             } else {
-                "本地"
+                "Local"
             }
         );
     }
     if indexed.is_empty() {
-        out.push_str("<p class=\"empty\">当前范围没有可用发现。</p>");
+        out.push_str("<p class=\"empty\">No findings are available for the current scope.</p>");
     }
     if indexed.len() > 5 {
         let _ = write!(
             out,
-            "<p class=\"note\">展示风险最高的 5 / {} 项，下方分组保留全部发现。</p>",
+            "<p class=\"note\">Showing the top 5 / {} by risk; the groups below keep every finding.</p>",
             indexed.len()
         );
     }
-    out.push_str("</section><aside class=\"panel\"><h3>分析范围</h3><dl class=\"facts\">");
+    out.push_str("</section><aside class=\"panel\"><h3>Analysis scope</h3><dl class=\"facts\">");
     let _ = write!(
         out,
-        "<dt>输入来源</dt><dd>{} 个</dd><dt>离线会话</dt><dd>{} 个</dd><dt>查询范围</dt><dd>{}</dd><dt>诊断信息</dt><dd>{} 错误 / {} 提醒</dd><dt>AI 状态</dt><dd>{}</dd>",
+        "<dt>Input sources</dt><dd>{}</dd><dt>Offline sessions</dt><dd>{}</dd><dt>Query scope</dt><dd>{}</dd><dt>Diagnostics</dt><dd>{} errors / {} warnings</dd><dt>AI status</dt><dd>{}</dd>",
         report.sources.len(),
         report.flows.len(),
         report.query_matches.as_ref().map_or_else(
-            || "未应用查询".into(),
-            |ids| format!("{} 条匹配", ids.len())
+            || "No query applied".into(),
+            |ids| format!("{} matches", ids.len())
         ),
         errors,
         report.diagnostics.len() - errors,
         if incomplete {
-            "部分完成"
+            "Partial"
         } else if report.ai_runs.is_empty() {
             if has_ai {
-                "未产生有效运行"
+                "No valid run produced"
             } else {
-                "未启用"
+                "Not enabled"
             }
         } else {
-            "已完成"
+            "Complete"
         }
     );
-    out.push_str("</dl><p class=\"note\">发现项数与命中记录数不同，同一记录可能关联多项发现。规则和 AI 结果是核查线索，不等同于已确认入侵。</p></aside></div>");
+    out.push_str("</dl><p class=\"note\">Finding counts differ from matched record counts; one record may be linked to multiple findings. Rule and AI results are review leads, not confirmed intrusions.</p></aside></div>");
     let mut actions = Vec::new();
     let mut seen = std::collections::HashSet::new();
     for finding in &ordered {
@@ -312,22 +312,22 @@ pub fn render(report: &AnalysisReport) -> String {
         }
     }
     if !actions.is_empty() {
-        out.push_str("<section class=\"panel\"><h3>建议优先执行</h3><ol class=\"actions\">");
+        out.push_str("<section class=\"panel\"><h3>Recommended first actions</h3><ol class=\"actions\">");
         for (recommendation, finding) in actions {
             let _ = write!(
                 out,
-                "<li>{}<small>依据：{}</small></li>",
+                "<li>{}<small>Basis: {}</small></li>",
                 escape(&brief(recommendation)),
                 escape(&finding.title)
             );
         }
-        out.push_str("</ol><small>完整建议可在各项发现中展开查看。</small></section>");
+        out.push_str("</ol><small>Full recommendations can be expanded in each finding.</small></section>");
     }
     section(
         &mut out,
         "local",
-        "本地规则分析",
-        "按风险分组 · 单项展开查看说明、建议与完整引用",
+        "Local rule analysis",
+        "Grouped by risk · Expand an item for details, recommendations, and full references",
         local.len(),
     );
     findings(&mut out, &local, &context);
@@ -335,19 +335,19 @@ pub fn render(report: &AnalysisReport) -> String {
         section(
             &mut out,
             "ai",
-            "AI 分析",
-            "通过结构与证据校验的发现 · 未验证回复单独保存",
+            "AI analysis",
+            "Findings passing structural and evidence validation · Unverified replies are saved separately",
             ai.len(),
         );
         out.push_str("<section class=\"panel\">");
         for run in &report.ai_runs {
             let _ = write!(
                 out,
-                "<div class=\"run\"><strong>{}</strong> · <span class=\"muted\">{}</span><p>完成 {}/{} 批次 · 已验证 {}/{} 条记录 · 原始包及载荷：{}</p><progress max=\"{}\" value=\"{}\" aria-label=\"AI 批次完成进度\"></progress><details class=\"subfold\"><summary>服务信息</summary><p>{}</p></details></div>",
+                "<div class=\"run\"><strong>{}</strong> · <span class=\"muted\">{}</span><p>Completed {}/{} batches · Verified {}/{} records · Raw packets and payloads: {}</p><progress max=\"{}\" value=\"{}\" aria-label=\"AI batch completion progress\"></progress><details class=\"subfold\"><summary>Service info</summary><p>{}</p></details></div>",
                 if run.is_complete() {
-                    "分析完成"
+                    "Analysis complete"
                 } else {
-                    "分析未完成，已保留部分结果"
+                    "Analysis incomplete, partial results retained"
                 },
                 escape(&run.model),
                 run.completed(),
@@ -355,9 +355,9 @@ pub fn render(report: &AnalysisReport) -> String {
                 run.analyzed_records,
                 run.selected(),
                 if run.include_payload {
-                    "包含"
+                    "Included"
                 } else {
-                    "不包含"
+                    "Not included"
                 },
                 run.batches.max(1),
                 run.completed(),
@@ -365,7 +365,7 @@ pub fn render(report: &AnalysisReport) -> String {
             );
         }
         if ai.is_empty() {
-            out.push_str("<p class=\"empty\">没有可用 AI 发现。请结合完成范围和诊断判断，不能据此确认全部证据已排除风险。</p>");
+            out.push_str("<p class=\"empty\">No AI findings are available. Judge this against the completion scope and diagnostics; it does not confirm that all evidence is risk-free.</p>");
         }
         out.push_str("</section>");
         findings(&mut out, &ai, &context);
@@ -373,17 +373,17 @@ pub fn render(report: &AnalysisReport) -> String {
             if run.batch_results.is_empty() {
                 continue;
             }
-            out.push_str("<section class=\"panel\"><details><summary>AI 各批次原始回复与诊断</summary><p class=\"note\">未通过校验的回复仅供排查，不作为结论。</p><div class=\"scroll\">");
+            out.push_str("<section class=\"panel\"><details><summary>Raw replies and diagnostics per AI batch</summary><p class=\"note\">Replies that failed validation are for troubleshooting only and are not conclusions.</p><div class=\"scroll\">");
             for batch in &run.batch_results {
                 let _ = write!(
                     out,
-                    "<details class=\"subfold\"><summary>第 {}/{} 批 · {} · {} 条记录 · 请求 {} 次</summary>",
+                    "<details class=\"subfold\"><summary>Batch {}/{} · {} · {} records · {} requests</summary>",
                     batch.index,
                     run.batches,
                     if batch.error.is_some() {
-                        "失败"
+                        "Failed"
                     } else {
-                        "已验证"
+                        "Verified"
                     },
                     batch.evidence_ids.len(),
                     batch.attempts.len()
@@ -391,12 +391,12 @@ pub fn render(report: &AnalysisReport) -> String {
                 for (index, attempt) in batch.attempts.iter().enumerate() {
                     let _ = write!(
                         out,
-                        "<details class=\"subfold\"><summary>第 {} 次回复 · {}</summary>",
+                        "<details class=\"subfold\"><summary>Reply {} · {}</summary>",
                         index + 1,
                         if attempt.error.is_some() {
-                            "未通过校验或请求失败"
+                            "Failed validation or request"
                         } else {
-                            "已验证"
+                            "Verified"
                         }
                     );
                     if let Some(error) = &attempt.error {
@@ -415,15 +415,15 @@ pub fn render(report: &AnalysisReport) -> String {
     section(
         &mut out,
         "sources",
-        "证据来源",
-        "文件信息、采集时间与完整 SHA256",
+        "Evidence sources",
+        "File info, collection time, and full SHA256",
         report.sources.len(),
     );
-    out.push_str("<section class=\"panel\"><div class=\"table-wrap\"><table class=\"source-table\"><thead><tr><th>来源</th><th>格式 / 大小</th><th>取证元数据</th></tr></thead><tbody>");
+    out.push_str("<section class=\"panel\"><div class=\"table-wrap\"><table class=\"source-table\"><thead><tr><th>Source</th><th>Format / size</th><th>Forensic metadata</th></tr></thead><tbody>");
     for (i, source) in report.sources.iter().enumerate() {
         let _ = write!(
             out,
-            "<tr><td><strong>S{} · {}</strong><small>{}</small></td><td>{}<small>{} 字节</small></td><td><details><summary>时间与哈希</summary><small>{}</small><code>{}</code></details></td></tr>",
+            "<tr><td><strong>S{} · {}</strong><small>{}</small></td><td>{}<small>{} bytes</small></td><td><details><summary>Time and hash</summary><small>{}</small><code>{}</code></details></td></tr>",
             i + 1,
             escape(filename(&source.path)),
             escape(&source.path),
@@ -438,15 +438,15 @@ pub fn render(report: &AnalysisReport) -> String {
     section(
         &mut out,
         "evidence",
-        "全部证据",
-        "按来源及每组 100 条分层收纳 · 点击引用自动定位并展开",
+        "All evidence",
+        "Grouped by source in pages of 100 · Click a reference to locate and expand it",
         report.records.len(),
     );
     evidence(&mut out, report, &context);
     diagnostics(&mut out, report);
     let _ = write!(
         out,
-        "<footer class=\"footer\"><span>Easy Analyzer · Schema {} · 完整证据保留在本文件</span><span>生成于 {}</span></footer></main><script>{SCRIPT}</script></body></html>",
+        "<footer class=\"footer\"><span>Easy Analyzer · Schema {} · Full evidence is retained in this file</span><span>Generated at {}</span></footer></main><script>{SCRIPT}</script></body></html>",
         report.schema_version,
         escape(&report.generated_at)
     );
@@ -459,14 +459,14 @@ fn auxiliary(out: &mut String, report: &AnalysisReport, context: &Context<'_>) {
         .iter()
         .any(|r| matches!(r.data, RecordData::Process(_)))
     {
-        out.push_str("<section class=\"panel\"><details><summary>进程父子关系</summary>");
+        out.push_str("<section class=\"panel\"><details><summary>Process parent-child relationships</summary>");
         out.push_str(&pre(&process_tree(&report.records)));
         out.push_str("</details></section>");
     }
     if !report.flows.is_empty() {
         let _ = write!(
             out,
-            "<section class=\"panel\"><details><summary>离线网络会话 · {} 个</summary><div class=\"table-wrap\"><table><thead><tr><th>端点</th><th>协议</th><th>包 / 字节</th><th>时间</th></tr></thead><tbody>",
+            "<section class=\"panel\"><details><summary>Offline network sessions · {}</summary><div class=\"table-wrap\"><table><thead><tr><th>Endpoints</th><th>Protocol</th><th>Packets / bytes</th><th>Time</th></tr></thead><tbody>",
             report.flows.len()
         );
         for flow in &report.flows {
@@ -478,8 +478,8 @@ fn auxiliary(out: &mut String, report: &AnalysisReport, context: &Context<'_>) {
                 escape(&flow.protocol),
                 flow.packets,
                 flow.bytes,
-                escape(flow.first_seen.as_deref().unwrap_or("未知")),
-                escape(flow.last_seen.as_deref().unwrap_or("未知"))
+                escape(flow.first_seen.as_deref().unwrap_or("Unknown")),
+                escape(flow.last_seen.as_deref().unwrap_or("Unknown"))
             );
         }
         out.push_str("</tbody></table></div></details></section>");
@@ -487,7 +487,7 @@ fn auxiliary(out: &mut String, report: &AnalysisReport, context: &Context<'_>) {
     if let Some(ids) = &report.query_matches {
         let _ = write!(
             out,
-            "<section class=\"panel\"><details><summary>查询匹配 · {} 条</summary><div class=\"scroll evidence-links\">",
+            "<section class=\"panel\"><details><summary>Query matches · {}</summary><div class=\"scroll evidence-links\">",
             ids.len()
         );
         for id in ids {
@@ -514,37 +514,37 @@ fn evidence(out: &mut String, report: &AnalysisReport, context: &Context<'_>) {
     ordered_groups.extend(groups);
     out.push_str("<section class=\"panel\">");
     if report.records.is_empty() {
-        out.push_str("<p class=\"empty\">没有证据记录。</p>");
+        out.push_str("<p class=\"empty\">No evidence records.</p>");
     }
     for (source_id, records) in ordered_groups {
         let label = context.sources.get(source_id).map_or_else(
-            || "未知来源".into(),
+            || "Unknown source".into(),
             |(i, source)| format!("S{} · {}", i + 1, filename(&source.path)),
         );
         let _ = write!(
             out,
-            "<details class=\"subfold\"><summary>{} · {} 条记录</summary><div class=\"scroll\">",
+            "<details class=\"subfold\"><summary>{} · {} records</summary><div class=\"scroll\">",
             escape(&label),
             records.len()
         );
         for (page, chunk) in records.chunks(100).enumerate() {
             let _ = write!(
                 out,
-                "<details class=\"subfold\"><summary>记录 {}–{}</summary>",
+                "<details class=\"subfold\"><summary>Records {}–{}</summary>",
                 page * 100 + 1,
                 page * 100 + chunk.len()
             );
             for (index, record) in chunk {
                 let status = match record.status {
-                    ParseStatus::Parsed => "已解析",
-                    ParseStatus::Unrecognized => "未识别",
-                    ParseStatus::Malformed => "畸形记录",
+                    ParseStatus::Parsed => "Parsed",
+                    ParseStatus::Unrecognized => "Unrecognized",
+                    ParseStatus::Malformed => "Malformed",
                 };
                 let _ = write!(
                     out,
-                    "<details class=\"record\" id=\"evidence-{index}\"><summary><span class=\"record-title\">{}<small class=\"muted\"> · {} · {}</small><br>{}</span></summary><div class=\"record-body\"><p><code>{}</code></p><h4>解析字段</h4>",
+                    "<details class=\"record\" id=\"evidence-{index}\"><summary><span class=\"record-title\">{}<small class=\"muted\"> · {} · {}</small><br>{}</span></summary><div class=\"record-body\"><p><code>{}</code></p><h4>Parsed fields</h4>",
                     escape(&record.position),
-                    escape(record.timestamp.as_deref().unwrap_or("时间未知")),
+                    escape(record.timestamp.as_deref().unwrap_or("Time unknown")),
                     status,
                     escape(&brief(&record_summary(record))),
                     escape(&record.id)
@@ -552,7 +552,7 @@ fn evidence(out: &mut String, report: &AnalysisReport, context: &Context<'_>) {
                 out.push_str(&pre(
                     &serde_json::to_string_pretty(&record.data).unwrap_or_default()
                 ));
-                out.push_str("<details class=\"subfold\"><summary>原始记录（文本 / JSON / 十六进制）</summary>");
+                out.push_str("<details class=\"subfold\"><summary>Raw record (text / JSON / hex)</summary>");
                 out.push_str(&pre(&record.raw));
                 out.push_str("</details></div></details>");
             }
@@ -566,13 +566,13 @@ fn diagnostics(out: &mut String, report: &AnalysisReport) {
     section(
         out,
         "diagnostics",
-        "分析诊断",
-        "错误优先 · 相同提示按来源与内容合并计数",
+        "Analysis diagnostics",
+        "Errors first · Duplicate messages merged and counted by source and content",
         report.diagnostics.len(),
     );
     out.push_str("<section class=\"panel\">");
     if report.diagnostics.is_empty() {
-        out.push_str("<p class=\"empty\">无解析、采集或 AI 错误。</p>");
+        out.push_str("<p class=\"empty\">No parsing, collection, or AI errors.</p>");
     }
     for level in [DiagnosticLevel::Error, DiagnosticLevel::Warning] {
         let mut groups: std::collections::BTreeMap<(&str, &str), Vec<&Diagnostic>> =
@@ -588,23 +588,23 @@ fn diagnostics(out: &mut String, report: &AnalysisReport) {
         }
         let _ = write!(
             out,
-            "<details{}><summary>{} · {} 类</summary><div class=\"scroll\">",
+            "<details{}><summary>{} · {} groups</summary><div class=\"scroll\">",
             if level == DiagnosticLevel::Error {
                 " open"
             } else {
                 ""
             },
             if level == DiagnosticLevel::Error {
-                "错误"
+                "Errors"
             } else {
-                "提醒"
+                "Warnings"
             },
             groups.len()
         );
         for ((source, message), items) in groups {
             let _ = write!(
                 out,
-                "<details class=\"subfold {}\"><summary><span class=\"finding-title\">{}<small>{} · {} 次</small></span></summary><div class=\"reader\"><p>{}</p></div><details class=\"subfold\"><summary>全部位置</summary><ul class=\"row-list scroll refs\">",
+                "<details class=\"subfold {}\"><summary><span class=\"finding-title\">{}<small>{} · {} occurrences</small></span></summary><div class=\"reader\"><p>{}</p></div><details class=\"subfold\"><summary>All locations</summary><ul class=\"row-list scroll refs\">",
                 if level == DiagnosticLevel::Error {
                     "diagnostic-error"
                 } else {
@@ -619,7 +619,7 @@ fn diagnostics(out: &mut String, report: &AnalysisReport) {
                 let _ = write!(
                     out,
                     "<li>{}</li>",
-                    escape(item.position.as_deref().unwrap_or("未指定位置"))
+                    escape(item.position.as_deref().unwrap_or("No position specified"))
                 );
             }
             out.push_str("</ul></details></details>");

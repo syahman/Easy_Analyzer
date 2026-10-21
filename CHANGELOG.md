@@ -1,205 +1,205 @@
-# 更新记录
+# Changelog
 
 ## 1.5.1 — 2026-10-15
 
-- 修复弹窗内来源、解析状态、协议等下拉菜单被遮挡及选中值不显示的问题；限制弹窗高度，保留长列表滚动，修复长项目名称在最小窗口下撑宽布局的问题。
-- 新增项目资料编辑入口，可修改名称、客户单位、带时区的响应起止时间、地点、服务人员和说明，随手动保存项目持久化。
-- 日志证据新增多维查询与原始/时间正序、倒序，支持时间范围、日志级别、客户端 IP、HTTP 状态码、方法、路径、Logger、主机及自定义字段；Windows 事件条件单独展开。
-- 补充常见 Tomcat JUL、Logback/Log4j 和 Spring 应用日志解析；无时区日志可明确指定来源时区，保留原始时间与未知字段，不猜测缺少年份的时间。
-- 统一项目、证据、发现、来源、诊断、IOC、AI 历史和引用的分页与页码跳转；复用筛选集合、索引与分页书签，进程结构、网络统计及引用按需缓存，列表详情按需读取。
-- 修复翻页失败重试、过期请求覆盖、滚动位置以及 IOC 重扫减少命中数后停留在无效页的问题；组合筛选优先使用范围较小的已有索引。
-- 使用真实 242 万条记录项目核对 168 组分页结果，按来源筛选的最慢后端元数据页读取由约 2.02 秒降至 17 毫秒；本地 Rust 120 项、前端 85 项测试及浏览器交互复验通过。测量范围和限制见 `docs/PROJECTS.md`。
+- Fixed dropdown menus inside dialogs for source, parse status, protocol, and similar selectors being obscured and selected values not displaying; limited dialog height while keeping long lists scrollable, and fixed long project names widening the layout at the minimum window size.
+- Added a project details editor covering name, client organization, timezone-aware response start/end times, location, responders, and description, persisted with manual project saves.
+- Log evidence gained multi-dimensional queries and ascending/descending original or time ordering, supporting time ranges, log levels, client IPs, HTTP status codes, methods, paths, loggers, hosts, and custom fields; Windows event conditions expand separately.
+- Added parsing for common Tomcat JUL, Logback/Log4j, and Spring application logs; timezone-less logs can specify an explicit source timezone, preserving original times and unknown fields without guessing times that lack a year.
+- Unified pagination and page jumping across projects, evidence, findings, sources, diagnostics, IOCs, AI history, and references; filter collections, indexes, and pagination bookmarks are reused, process structures, network statistics, and references are cached on demand, and list details load on demand.
+- Fixed page-turn retry after failure, stale requests overwriting fresh results, scroll positions, and remaining on an invalid page after an IOC rescan reduces the match count; combined filters prefer existing indexes with a smaller scope.
+- Verified 168 paginated result sets against a real project with 2.42 million records, where the slowest backend metadata page read for source-filtered views dropped from about 2.02 s to 17 ms; 120 local Rust tests, 85 frontend tests, and repeated browser interaction checks pass. See `docs/PROJECTS.md` for measurement scope and limitations.
 
 ## 1.5.0 — 2026-10-13
 
-- 左侧工作台新增“应急响应命令”，无需打开项目即可离线查看 Windows / Linux 各 24 条排查与取证命令；支持平台切换、六类筛选和名称、用途、命令文本搜索。
-- 每条命令注明执行环境、权限、适用条件与参数替换要求；原生剪贴板复制保留完整文本和换行，显示成功或失败反馈，不执行命令。
-- 命令页独立于项目和证据筛选，不写入 `.eair` 或改变 AI 范围；后台任务完成后保留命令页面，支持深浅主题、普通窗口双列和窄窗口单列布局。
-- 侧栏导航独立滚动，修复窄窗口入口增加后底部按钮带动整个工作区滚动、遮挡标题的问题。
-- 项目列表新增“移除”及确认提示，仅删除本机目录记录，保留 `.eair` 文件、证据和 IOC；可清理缺失文件记录，重新打开或保存后恢复列表，拒绝过期路径操作。
-- Rust 格式检查、Clippy 和工作区测试改为推送前在本地执行，GitHub 工作流保留平台构建、前端检查和打包校验。
+- Added "Response commands" to the left workspace: 24 investigation and forensic commands each for Windows and Linux, viewable offline without opening a project; supports switching platforms, filtering by six categories, and searching by name, purpose, or command text.
+- Each command notes its execution environment, permissions, applicability conditions, and parameter substitution requirements; native clipboard copies preserve the full text and line breaks, success or failure feedback is shown, and commands are never executed.
+- The commands page is independent of project and evidence filters and does not write to `.eair` or change the AI scope; the page persists after background tasks finish, supports dark and light themes, and uses two columns in normal windows and one column in narrow windows.
+- The sidebar navigation scrolls independently, fixing an issue where, after entries were added for narrow windows, the bottom button scrolled the whole workspace and covered the title.
+- The project list gained a "Remove" action with a confirmation prompt that deletes only the local catalog entry, keeping the `.eair` file, evidence, and IOCs; entries for missing files can be cleaned up, the list recovers after reopening or saving, and stale path operations are rejected.
+- Rust formatting checks, Clippy, and workspace tests now run locally before pushing; GitHub workflows keep platform builds, frontend checks, and packaging validation.
 
 ## 1.4.0 — 2026-10-09
 
-- 正式提供独立应急响应项目，支持多天追加证据、项目资料、备注、保存与续办；CLI 与 GUI 共用项目服务，项目目录仅保存资料和路径。
-- 正式提供项目内 IOC 清单与离线匹配，支持文件、粘贴和手动输入 IP、域名、URL，保存命中引用并支持分页、跳转和取消。
-- 项目使用第二版 `.eair` 格式，按记录无损压缩证据文本、解析数据、诊断和 AI 回复，去除重复预览并回收空闲页；不读取旧项目格式，报告 schema 保持兼容。
-- 修复首页遍历全部诊断导致大项目加载缓慢；无 AI 历史时跳过摘要查询，总览统计按项目修订缓存，macOS APFS 使用独立写时复制工作副本。
-- 分类分页直接读取索引并冻结证据范围，关键词/正则筛选复用最多四组结果；进程树、诊断统计及 AI 摘要按数据变化刷新，保存备注和分页位置不再触发全量统计。AI 历史按页读取，诊断只在报告页加载正文，网络会话复用筛选范围。
-- 本机 242 万条证据项目日志首屏数据读取由 9.614 s 降至 0.044 s，下一页由 4.348 s 降至 0.001 s；最新快照压缩后缩小约 57%，完整数据核对一致。自动化覆盖与测量范围见 `docs/PROJECTS.md`。
+- Standalone incident response projects are now generally available, supporting multi-day evidence appending, project details, notes, saving, and case continuation; the CLI and GUI share the same project service, and the project catalog stores only details and paths.
+- In-project IOC lists and offline matching are now generally available, supporting IPs, domains, and URLs from files, pasted text, and manual entry, saving match references with pagination, navigation, and cancellation.
+- Projects use the second `.eair` format, losslessly compressing evidence text, parsed data, diagnostics, and AI replies per record, removing duplicate previews, and reclaiming free pages; the old project format is not read and the report schema stays compatible.
+- Fixed slow loading of large projects caused by the home page traversing all diagnostics; summary queries are skipped when there is no AI history, overview statistics are cached per project revision, and macOS APFS uses a separate copy-on-write working copy.
+- Category pagination reads indexes directly and freezes the evidence scope, and keyword/regex filters reuse up to four result sets; process trees, diagnostic statistics, and AI summaries refresh as data changes, and saving notes or pagination positions no longer triggers full statistics. AI history reads by page, diagnostics load bodies only on the report page, and network sessions reuse filtered scopes.
+- On a local project with 2.42 million evidence records, first-page log data reads dropped from 9.614 s to 0.044 s and next-page reads from 4.348 s to 0.001 s; the latest snapshot shrank by about 57% after compression with full data verified identical. See `docs/PROJECTS.md` for automated coverage and measurement scope.
 
 ## 1.4.0-preview.1 — 2026-10-05
 
-- 功能分支推送自动执行三个平台的 Rust/GUI 测试、Clippy、格式检查并构建附件；预览 tag 发布 GitHub Pre-release，提供 Windows 轻量安装包和 macOS DMG，校验版本及六个附件，不替换正式版 Latest。
-- IOC 匹配移至“证据”分组，明确清单与结果归属当前项目；增加跨客户、相同 IOC 不同说明和扫描策略、独立保存重开及目录库不保存 IOC 的数据库隔离回归验证。
-- 修复 IOC 页面超出窗口后底部结果被裁切的问题，页面独立滚动，可完整查看匹配结果及分页控件。
-- 项目首页区分新建入口与已有项目列表，筛选条件默认收起并明确标注用途，避免误认为新建资料表单。
-- 项目名称默认使用客户单位，GUI 自动填入且支持手动改名，CLI 创建和保存新项目可省略名称；新 AI 配置默认按模型上下文预算自动规划发送。
-- 新增 Windows x64 轻量 NSIS 安装包构建入口：中文/英文向导、当前用户安装、开始菜单及卸载入口，缺少 WebView2 时联网安装运行环境。
-- macOS DMG 新增浅色品牌安装界面、拖拽指引及固定图标布局，提供普通屏和 Retina 背景；本地与 CI 共用打包流程，继续使用未压缩只读格式。
-- 新增应急响应项目：独立 UUID、客户及带时区的响应资料，GUI 项目首页、搜索与续办，CLI `project create/open/list/import/edit/note`；支持追加证据、备注、筛选保存、另存为和未保存提示。
-- 新增独立 `.eair` SQLite 项目文件及仅保存资料与路径的本地目录；私有工作数据库、Backup API 原子快照、结构与证据引用校验、路径和外部修改保护。
-- 新增 IOC 文件、粘贴和手动入口，统一校验去重；离线匹配 IP、域名及完整 HTTP/HTTPS URL，保存命中位置与证据引用，支持分页、重复扫描及取消后保留有效命中。
-- 项目分页、筛选、AI 证据批次及 HTML/JSON 导出采用数据库游标或磁盘批次，保持既有 core 入口和 JSON schema；HTML 增加项目抬头。新增合成大项目性能检查，结果见 `docs/PROJECTS.md`。
+- Feature branch pushes automatically run Rust/GUI tests, Clippy, and format checks on three platforms and build artifacts; preview tags publish GitHub Pre-releases with the lightweight Windows installer and the macOS DMG, validate the version and all six assets, and do not replace the stable Latest release.
+- IOC matching moved to the "Evidence" group, clarifying that lists and results belong to the current project; added regression checks for database isolation across clients, the same IOC with different notes and scan policies, independent save and reopen, and the catalog not storing IOC data.
+- Fixed the bottom of IOC results being clipped beyond the window; the page now scrolls independently so match results and pagination controls are fully visible.
+- The project home page separates the create-project entry from the existing-projects list, with filter conditions collapsed by default and their purpose clearly labeled so they are not mistaken for a new-project form.
+- Project names default to the client organization: the GUI auto-fills the name and allows manual renaming, and the CLI may omit the name when creating or saving new projects; new AI configurations plan sends automatically using the model context budget.
+- Added a Windows x64 lightweight NSIS installer build entry: a Chinese/English wizard, per-user installation, Start menu and uninstall entries, and a web download of the WebView2 runtime when missing.
+- The macOS DMG gained a light branded install interface, drag-and-drop guidance, and a fixed icon layout, with standard and Retina backgrounds; local and CI share the packaging process and keep the uncompressed read-only format.
+- Added incident response projects: a separate UUID, client details, and timezone-aware response details; a GUI project home page with search and case continuation; CLI `project create/open/list/import/edit/note`; support for appending evidence, notes, saved filters, saving as a new file, and unsaved-change prompts.
+- Added the self-contained `.eair` SQLite project file and a local catalog that stores only details and paths; a private working database, atomic snapshots via the Backup API, structure and evidence reference validation, and path and external-modification protection.
+- Added IOC file, paste, and manual entry points with unified validation and deduplication; offline matching of IPs, domains, and complete HTTP/HTTPS URLs; saved match positions and evidence references; pagination, repeated scans, and retention of valid matches after cancellation.
+- Project pagination, filtering, AI evidence batches, and HTML/JSON export use database cursors or on-disk batches, preserving existing core entry points and the JSON schema; the HTML report gained a project header. Added synthetic large-project performance checks with results in `docs/PROJECTS.md`.
 
 ## 1.3.1 — 2026-10-02
 
-- macOS ARM64 GUI 改为发布未压缩的只读 DMG，打开后可将 `Easy Analyzer.app` 拖入“应用程序”；包含产品图标、应用信息、许可证及 ad-hoc 签名，不再发布该平台的 GUI 裸可执行文件。
-- CI 与本地打包共用应用包构建脚本；挂载 DMG 后验证资源完整性、版本、ARM64 架构、可执行权限与签名，校验文件覆盖 DMG 本身。Windows/Linux 的 CLI/GUI 以及 macOS CLI 附件保持不变，已有发布版本不覆盖。
+- The macOS ARM64 GUI now ships as an uncompressed read-only DMG; open it and drag `Easy Analyzer.app` into Applications. It includes the product icon, app metadata, license, and ad-hoc signature, and the bare GUI executable is no longer published for this platform.
+- CI and local packaging share the app bundle build script; after mounting the DMG, verification checks resource integrity, version, ARM64 architecture, executable permissions, and the signature, with the DMG itself included in the checked assets. Windows/Linux CLI/GUI and macOS CLI assets are unchanged, and published releases are never overwritten.
 
 ## 1.3.0 — 2026-10-02
 
-- 桌面图标改用 easy 系列 Easy Analyzer 碧绿色斜体 E 与柱形标识，同步 Windows ICO、macOS ICNS、Linux PNG 和 GUI 标识；16/24/32 px 使用独立光学校正母版，提供可复现的 SVG 导出脚本，保留旧图标。
-- AI 页新增本地证据筛选弹窗，可直接修改完整发送范围；查询失败保留有效筛选，空集合禁止发送。有效发现只展示 AI 结果，本地发现仍保留在概览和完整报告中；压缩发送控件、加高结果表，运行历史移入独立弹窗，预算与本地整理默认折叠。
-- AI 个别证据批次或汇总分组失败后继续处理其余批次，汇总成功回复并标明缺失范围；汇总失败或取消时提供明确标注的本地结果整理，保留发现、中性线索和证据引用，随 HTML/JSON 导出，不新增 AI 推断或改变报告 schema。
-- AI 状态栏显示当前批次与总批次；跨批汇总显示轮次及该轮批次进度。等待最后一批回复时保持活动指示，不显示虚假的 100% 完成。
-- AI 新增按模型上下文预算规划：预算内单次完整发送，超出才分批；发送前本地预览记录数、保守 token 估算与证据批次数，固定本次配置、范围和载荷，拒绝过期预览。
-- 上下文模式分批后汇总已校验的发现及中性关联线索；超出汇总预算时进行最多四轮分组归并，逐阶段校验证据引用。汇总失败或取消保留已接受结果和原始回复，汇总不重复计算已分析记录，也不改变报告 schema。
-- 新增可选 `context_tokens`，预留输出上限和 20% 安全余量；旧配置仍沿用字节分批。Token 为本地保守估算，不代表模型精确分词或自动识别服务限制。
-- 修复 Windows 事件详情中 `#attributes` 嵌套字段未汉化的问题，覆盖执行线程/进程 ID、事件提供程序、记录时间、活动 ID、用户 SID 等系统属性；兼容 `_attributes` 路径，原始字段名和值保持不变。
+- The desktop icon now uses the easy-series Easy Analyzer teal-green italic E with a bar-chart mark, synchronized across the Windows ICO, macOS ICNS, Linux PNG, and GUI logo; the 16/24/32 px sizes use separately optically corrected masters, a reproducible SVG export script is provided, and the old icon is retained.
+- The AI page gained a local evidence filter dialog for directly editing the full send scope; failed queries keep the valid filter, and empty collections cannot be sent. Valid findings show AI results only, while local findings remain in the overview and the full report; send controls were compacted, the results table made taller, run history moved into a separate dialog, and the budget and local triage sections collapsed by default.
+- When an individual evidence batch or summary group fails, AI continues processing the remaining batches and records a successful reply noting the missing scopes; if summarization fails or is canceled, a clearly labeled local triage is provided that keeps findings, neutral leads, and evidence references and is included in HTML/JSON exports, without adding AI inference or changing the report schema.
+- The AI status bar shows the current batch and total batches, and cross-batch summarization shows the round and per-round batch progress. An activity indicator remains while waiting for the last batch reply, with no fake 100% completion display.
+- AI added model context budget planning: one complete send within the budget, batching only beyond it. Before sending, a local preview shows record counts, conservative token estimates, and the number of evidence batches, pins the configuration, scope, and payload for that run, and rejects stale previews.
+- In context mode, validated findings and neutral related leads are summarized after batching; when the summary budget is exceeded, up to four rounds of grouped merging run with evidence references validated at each stage. If summarization fails or is canceled, accepted results and original replies are retained. Summaries do not double-count analyzed records and do not change the report schema.
+- Added optional `context_tokens` with the output limit reserved plus a 20% safety margin; older configurations keep byte-based batching. Tokens are a conservative local estimate and do not represent the model's exact tokenization or automatic detection of service limits.
+- Fixed nested `#attributes` fields in Windows event details not being translated, covering system attributes such as execution thread/process IDs, the event provider, record time, activity ID, and user SID; the `_attributes` path stays compatible and original field names and values are unchanged.
 
 ## 1.2.0 — 2026-10-02
 
-- 修复 Windows GUI 关闭按钮无法退出的问题：补齐关闭事件所需的窗口销毁权限，保存偏好后直接完成关闭，避免重复发起关闭事件；运行中的任务仍提供取消并保留结果提示。
-- 单元测试嵌入合成日志样本，避免交叉编译后在 Windows 上依赖 Mac 编译目录。
-- Windows GUI 导入页新增主动 UAC 提权入口与真实令牌权限状态。管理员窗口使用独立 WebView 目录及临时偏好，预选本机进程采集；原窗口和证据保留，取消授权不清空会话。
-- Windows 本机进程采集在读取期间尝试启用 SeDebugPrivilege，结束后恢复之前的状态；启用失败仍保留可读证据，并诊断缺失的路径、命令行和账户信息。
-- GUI 日志详情汉化常见 Windows 事件字段名称，悬停可查看原始字段名；保留未知字段、原始值和报告 schema。
-- Windows 关闭与管理员采集已在 Parallels Windows 11 ARM64 中验证；实际 UAC 批准/取消及提权前后字段增量仍待验证，详见 `docs/GUI_VALIDATION.md`。
+- Fixed the Windows GUI close button failing to exit: the window-destroy permission required by the close event was completed, and after saving preferences the close finishes directly, avoiding duplicate close events; running tasks still offer cancellation and keep their result prompts.
+- Unit tests embed synthetic log samples so that, after cross-compilation, they no longer depend on Mac build directories on Windows.
+- The Windows GUI import page gained an explicit UAC elevation entry and real token permission status. The elevated window uses a separate WebView directory and temporary preferences, with local process collection preselected; the original window and evidence are kept, and canceling authorization does not clear the session.
+- Windows local process collection attempts to enable SeDebugPrivilege while reading and restores the previous state afterwards; if enabling fails, readable evidence is retained and missing paths, command lines, and account information are diagnosed.
+- GUI log details translate common Windows event field names, with the original field names available on hover; unknown fields, original values, and the report schema are preserved.
+- Windows closing and elevated collection were verified in Parallels Windows 11 ARM64; actual UAC approval/cancellation and field deltas before and after elevation remain to be verified. See `docs/GUI_VALIDATION.md` for details.
 
 ## 1.1.1 — 2026-10-01
 
-- 标签 CI 同时构建 Windows x64、Linux x64、macOS ARM64 的 CLI 与 Tauri GUI，增加前端构建/测试和 Linux 图形库依赖；workspace 默认构建成员保持不变。
-- Releases 附件以 `easy-analyzer-cli-*` / `easy-analyzer-gui-*` 区分六个独立程序，统一生成 SHA256SUMS；校验 Rust/GUI/依赖锁版本，拒绝缺失程序和额外配置、报告等文件，不覆盖已发布版本。
-- 修正本机 AI 模拟服务接收连接后的阻塞模式，避免 macOS 测试偶发读取失败；不改变实际 AI 调用逻辑。
-- 固定前端源码为 LF 行尾，避免 Windows 检出为 CRLF 后格式检查失败。
+- Tag CI builds the CLI and Tauri GUI for Windows x64, Linux x64, and macOS ARM64 together, adding frontend build/test steps and Linux graphics library dependencies; the workspace default build members are unchanged.
+- Release assets distinguish the six standalone programs with the `easy-analyzer-cli-*` / `easy-analyzer-gui-*` prefixes and generate a unified SHA256SUMS; Rust/GUI/lockfile versions are validated, missing programs and extra files such as configs or reports are rejected, and published releases are never overwritten.
+- Fixed the blocking mode used by the local AI mock service after accepting a connection, avoiding occasional read failures in macOS tests; the real AI call logic is unchanged.
+- Frontend sources are pinned to LF line endings to prevent format checks failing after CRLF checkouts on Windows.
 
 ## 1.1.0 — 2026-10-01
 
-- 新增 Tauri 2 + React 原生 GUI，采用 1280×720 的八页工作台、浅深双主题、可调整详情与窄窗口抽屉；保留 CLI 与共享应用层架构。
-- app 新增记录/来源/类别/解析状态筛选、概览与发现分页、证据定位及完整筛选集合；非法正则保留有效结果，进程祖先上下文不扩大 AI 范围，网络会话保留完整统计。
-- GUI 通过后台任务完成导入、查询、关系构建、AI、配置与导出，拒绝旧会话/修订号；筛选外引用返回恢复，AI 主动发送并固定范围/设置，原始包和载荷每次主动选择。
-- 新增来源完整路径/哈希详情、配置密钥状态与原子保存、完整 HTML/JSON 导出，以及中文输入法确认候选词时的回车保护。
-- 完成 macOS ARM64 GUI 本地打包、合成数据回归及八页双主题真实截图；原生拖放、输入法组合与退出偏好仍需人工复核，Windows/Linux GUI 尚未实机验证。
-- 标签发布附件保持三个平台的 CLI 独立程序与 SHA256SUMS；GUI 源码随标签提供，安装包按 docs/GUI.md 本地构建。
+- Added a Tauri 2 + React native GUI with an eight-page workspace at 1280×720, light and dark themes, resizable detail panes, and narrow-window drawers; the CLI and shared application layer architecture are kept.
+- The app added record/source/category/parse-status filters, overview and findings pagination, evidence navigation, and complete filtered collections; invalid regexes preserve valid results, process ancestor context does not expand the AI scope, and network sessions keep full statistics.
+- The GUI performs import, queries, relationship building, AI, configuration, and export through background tasks and rejects stale session/revision numbers; references outside the current filter are restored on return, AI sends explicitly and pins scope/settings, and raw packets and payloads are selected explicitly every time.
+- Added full path/hash details for sources, configuration key status and atomic saving, full HTML/JSON export, and Enter-key protection while confirming candidates in a Chinese input method.
+- Completed macOS ARM64 GUI local packaging, synthetic-data regression, and real screenshots of all eight pages in both themes; native drag-and-drop, IME composition, and quit preferences still need manual review, and the Windows/Linux GUI has not yet been verified on real machines.
+- Tag release assets keep the standalone CLI programs for the three platforms plus SHA256SUMS; GUI source ships with the tag, and installers are built locally per docs/GUI.md.
 
-- 新增 analyzer-app，共享分析编排、会话、证据索引、分页查询、结构化进程树、配置保存和报告导出，CLI 迁移为应用层适配器。
-- core 增加统一执行上下文、阶段进度和协作式取消；CLI 支持 Ctrl+C，保留有效证据及已完成 AI 回复，停止后续请求。
-- 新增后台任务、任务编号及终止状态，便于后续 Rust GUI 接入；保留现有命令、短参数和报告 schema。
+- Added analyzer-app, sharing analysis orchestration, sessions, evidence indexing, paginated queries, structured process trees, configuration saving, and report export, with the CLI migrated into an application-layer adapter.
+- core gained a unified execution context, stage progress, and cooperative cancellation; the CLI supports Ctrl+C, keeping valid evidence and completed AI replies while stopping further requests.
+- Added background tasks with task IDs and terminal states for a future Rust GUI; existing commands, short options, and the report schema are preserved.
 
 ## 1.0.0 — 2026-09-30
 
-- 首次正式 Releases 发布，仓库位于 MoShouSecurity/easy_analyzer。
-- 支持 Windows/Linux 登录日志、Apache/Nginx、自定义 Web 格式、进程快照及离线 PCAP/PCAPNG 分析。
-- 支持本地规则、关键词查询、场景化 AI 分析及终端、JSON、响应式 HTML 报告。
-- 发布 Windows x64、Linux x64、macOS ARM64 三个独立程序和 SHA256SUMS。
+- First official Releases publication, with the repository at MoShouSecurity/easy_analyzer.
+- Supports Windows/Linux login logs, Apache/Nginx, custom web formats, process snapshots, and offline PCAP/PCAPNG analysis.
+- Supports local rules, keyword queries, scenario-based AI analysis, and terminal, JSON, and responsive HTML reports.
+- Publishes standalone programs for Windows x64, Linux x64, and macOS ARM64 plus SHA256SUMS.
 
 ## 0.1.18 — 2026-09-30
 
-- 默认 AI 每批证据文本上限提高到 96 KiB（98304 字节），配置项仍为 batch_bytes，可继续调大。
+- Raised the default AI per-batch evidence text limit to 96 KiB (98304 bytes); the setting remains batch_bytes and can be increased further.
 
 ## 0.1.17 — 2026-09-30
 
-- HTML 改为响应式风险概览，优先展示重点发现与建议；发现、引用、AI 回复、进程、会话、查询和诊断分层折叠，长内容限制显示高度。
-- 完整证据按来源和每组 100 条收纳，引用使用简短位置并自动展开定位；报告保持单文件离线使用，导航脚本由 CSP 哈希限定。
-- 终端各区按 `-n` 控制数量，风险和错误优先，相同诊断合并；JSON 顶部新增 summary 概览，保留完整数据字段。
+- The HTML report became a responsive risk overview prioritizing key findings and recommendations; findings, references, AI replies, processes, sessions, queries, and diagnostics collapse in layers, and long content has a limited display height.
+- Full evidence is grouped by source in sets of 100 entries, references use short locations and expand automatically for navigation; the report remains a single offline file, and the navigation script is restricted by a CSP hash.
+- Terminal sections control counts with `-n`, prioritize risks and errors, and merge identical diagnostics; JSON gained a summary overview at the top while keeping the complete data fields.
 
 ## 0.1.16 — 2026-09-30
 
-- HTML 报告单列 AI 分析，展示已验证发现、批次完成范围和各次 API 原始回复；JSON 同步保存批次、回复和错误。
-- JSON 或证据校验失败时最多重试两次，动画显示重试状态；最终失败时保留此前完成结果，标明未执行批次，仍返回失败状态。
-- 保持必需字段、置信度和证据编号校验，不把未通过校验的回复作为结论。
+- The HTML report gives AI analysis a dedicated section showing validated findings, batch completion scope, and each raw API reply; JSON stores batches, replies, and errors in sync.
+- JSON or evidence validation failures retry up to twice with an animated retry status; on final failure, previously completed results are kept, unexecuted batches are noted, and the failure status is still returned.
+- Required-field, confidence, and evidence-ID validation is preserved, and replies that fail validation are not treated as conclusions.
 
 ## 0.1.15 — 2026-09-30
 
-- AI 结果兼容 `confidence_note` 等额外字段并忽略，避免因模型扩展字段导致整批失败。
-- 继续严格检查必需字段、类型、严重度、置信度范围和证据编号；提示词明确六个结果字段，说明写入 description。
+- AI results tolerate and ignore extra fields such as `confidence_note`, preventing model-added fields from failing an entire batch.
+- Strict checks continue for required fields, types, severity, confidence ranges, and evidence IDs; prompts explicitly define the six result fields, with explanations written into description.
 
 ## 0.1.14 — 2026-09-30
 
-- CLI AI 分析增加旋转动画，显示证据准备、当前批次和耗时，完成或失败后结束动画。
-- 动画仅在交互终端的标准错误输出显示，兼容 JSON 输出和报告导出；标准错误重定向时关闭动画。
+- CLI AI analysis gained a spinner animation showing evidence preparation, the current batch, and elapsed time; the animation ends on completion or failure.
+- The animation appears only on the interactive terminal's standard error and stays compatible with JSON output and report export; it is disabled when stderr is redirected.
 
 ## 0.1.13 — 2026-09-30
 
-- AI 将解析结果整理为带证据编号的文本，减少 Web 请求等重复字段，仍使用 Chat Completions 接口。
-- 自动生成 Windows、Linux 登录/SSH、Web、进程、网络和混合场景的 system 提示词，明确分析重点与证据边界。
-- 分批按证据文本字节数计算，保留 JSON 结构与证据引用校验；PCAP 原始包及载荷仍由 `-P` 控制。
+- AI organizes parsed results into text labeled with evidence IDs, reducing repeated fields such as web requests, and still uses the Chat Completions interface.
+- System prompts are generated automatically for the Windows, Linux login/SSH, web, process, network, and mixed scenarios, defining the analysis focus and evidence boundaries.
+- Batches are sized by evidence-text bytes, keeping the JSON structure and evidence reference validation; PCAP raw packets and payloads remain controlled by `-P`.
 
 ## 0.1.12 — 2026-09-30
 
-- `-o html` 自动保存到当前目录，已有报告时另取名称；`-O` 继续支持指定路径，导出后提示保存位置。
-- 文件或 JSON 报告输出时直接在终端显示失败诊断，保留已有本地分析结果。
-- AI 默认每批证据上限调整为 65536 字节，单条超限提示具体大小、位置和配置项。
+- `-o html` auto-saves to the current directory and picks a new name when a report already exists; `-O` still accepts an explicit path, and the save location is shown after export.
+- Failure diagnostics print directly to the terminal for file or JSON report output, keeping existing local analysis results.
+- The default AI per-batch evidence limit is now 65536 bytes, and items exceeding the per-item limit report their exact size, position, and the relevant setting.
 
 ## 0.1.11 — 2026-09-30
 
-- 默认通过当前目录 `config.toml` 的 `api_key` 字段持久保存和读取密钥，文件密钥优先；旧 `api_key_env` 配置仍可兼容。
-- `config show` 和调试输出隐藏密钥，配置格式错误不回显原始配置行。
-- DeepSeek 未配置密钥时在请求前给出中文提示，配置帮助与文档同步更新。
+- Keys are persisted and read by default through the `api_key` field of `config.toml` in the current directory, with the file key taking precedence; the older `api_key_env` configuration remains compatible.
+- `config show` and debug output hide keys, and configuration format errors do not echo the original config line.
+- DeepSeek shows a Chinese-language hint before requests when no key is configured, and configuration help and docs were updated accordingly.
 
 ## 0.1.10 — 2026-09-30
 
-- AI 默认配置使用 DeepSeek 官方 API、`deepseek-flash` 模型和 `DEEPSEEK_API_KEY` 环境变量。
-- 默认采用 JSON 输出和 `max_tokens`，请求超时调整为 300 秒，输出上限调整为 65536 token。
-- CLI 配置提示、帮助与文档同步更新，仍支持自定义 OpenAI 兼容服务。
+- The default AI configuration uses the official DeepSeek API, the `deepseek-flash` model, and the `DEEPSEEK_API_KEY` environment variable.
+- JSON output and `max_tokens` are used by default, the request timeout is now 300 seconds, and the output limit is 65536 tokens.
+- CLI configuration hints, help, and docs were updated in sync; custom OpenAI-compatible services remain supported.
 
 ## 0.1.9 — 2026-09-30
 
-- 所有平台默认在当前工作目录创建和读取 `config.toml`，`-c` 继续支持指定其他配置路径。
-- 配置帮助与使用文档同步更新；配置已存在时仍不覆盖。
+- All platforms create and read `config.toml` in the current working directory by default; `-c` still supports specifying another configuration path.
+- Configuration help and usage docs were updated in sync; an existing configuration is still never overwritten.
 
 ## 0.1.8 — 2026-09-30
 
-- 默认发现列表按风险分组，以对齐的命中数量和名称展示；隐藏零项级别、规则 ID、置信度、重复说明及证据位置。
-- 登录关联、进程、流量及 AI 发现保留简短上下文，多来源发现附文件名。
-- `-R` 展示完整发现解释、置信度、规则 ID、证据引用及原始记录；终端概览、标题和操作提示统一简化为中文。
+- The default findings list groups by risk and shows aligned match counts and names; zero-count levels, rule IDs, confidence, duplicate notes, and evidence locations are hidden.
+- Login correlation, process, traffic, and AI findings keep short context, with filenames attached to findings from multiple sources.
+- `-R` shows full finding explanations, confidence, rule IDs, evidence references, and raw records; the terminal overview, titles, and action hints were unified and simplified to Chinese.
 
 ## 0.1.7 — 2026-09-30
 
-- 默认记录摘要合并为一行风险级别和关键字段，隐藏逐条的来源/位置、已解析状态、时间和重复规则列表。
-- `-R` 原始模式继续显示完整记录头、时间、位置与命中规则；默认摘要保留未识别/畸形记录的异常标记。
+- The default record summary condenses to a single line with risk level and key fields, hiding per-record source/location, parse status, time, and repeated rule lists.
+- `-R` raw mode continues to show the full record header, time, location, and matched rules; the default summary keeps anomaly markers for unrecognized/malformed records.
 
 ## 0.1.6 — 2026-09-30
 
-- 终端证据省略数量改为同行显示“另有 N 条”；完整查看方法集中在输出末尾提示一次。
+- Omitted terminal evidence now shows "N more entries" on the same line; instructions for viewing everything are shown once at the end of the output.
 
 ## 0.1.5 — 2026-09-30
 
-- CLI 默认显示关键字段摘要，隐藏原始日志和完整字段 JSON；未识别记录也不回显原文。
-- 新增 `-R` / `--raw`，可在摘要后显示原始记录；仅控制终端文本输出，JSON/HTML 继续保留完整证据。
-- 摘要长字段限制为 120 字符，默认每项发现展示最多 3 个来源/位置引用，便于终端阅读。
-- 仅在请求 JSON 输出时序列化完整 JSON 报告，减少纯终端摘要的额外开销。
+- The CLI shows a key-field summary by default and hides raw logs and the full-field JSON; unrecognized records do not echo the original text either.
+- Added `-R` / `--raw` to show raw records after the summary; it only controls terminal text output, while JSON/HTML keep full evidence.
+- Long summary fields are limited to 120 characters, and each finding shows at most 3 source/location references by default for terminal readability.
+- The full JSON report is serialized only when JSON output is requested, reducing overhead for pure terminal summaries.
 
 ## 0.1.4 — 2026-09-30
 
-- 打包直接更新 `dist/` 中的最新程序与配套文件，取消版本子目录；各平台工作流同样保存原始程序文件。
-- 日志默认规则扩展至 53 项，覆盖 Windows、Linux、Web 常见应急核查场景，包含高危、中危、低危三个级别。
-- `-s` 一键筛选全部默认规则命中；终端及 HTML 按风险排序并显示中文级别、统计及证据引用，终端记录附命中规则。
-- 同一规则同一来源汇总证据，终端每项证据引用受 `-n` 限制；JSON/HTML 保留完整引用。
-- Windows 规则核对提供者与事件 ID；登录关联额外区分来源中的目标主机，避免跨主机合并。
+- Packaging now updates the latest programs and companion files directly in `dist/`, dropping version subdirectories; the platform workflows likewise keep the raw program files.
+- Default log rules expanded to 53, covering common Windows, Linux, and web incident-response scenarios across high, medium, and low severity.
+- `-s` filters all default rule matches in one step; the terminal and HTML sort by risk and show Chinese severity levels, statistics, and evidence references, with terminal records listing the matched rules.
+- Evidence is grouped per rule and source, with terminal evidence references per finding limited by `-n`; JSON/HTML keep full references.
+- Windows rules check provider and event IDs; login correlation additionally distinguishes target hosts within a source to avoid merging across hosts.
 
 ## 0.1.3 — 2026-09-30
 
-- 为全部长选项增加单字母短选项；同一参数在各命令使用相同字母，保留长写法与原有依赖条件。
-- 帮助页同时显示长短选项，常用示例使用短写法；README 提供完整对照表。
-- macOS 演示脚本使用 `-j` / `-H` 保存 JSON/HTML 报告。
+- All long options gained single-letter short forms; the same parameter uses the same letter across commands, keeping the long forms and existing dependency conditions.
+- Help pages show both long and short options, common examples use the short forms, and the README provides the complete comparison table.
+- The macOS demo script uses `-j` / `-H` to save JSON/HTML reports.
 
 ## 0.1.2 — 2026-09-30
 
-- 汉化参数解析诊断：缺少输入、未知命令/选项、无效值、参数冲突和数量错误均使用中文提示，保留可选值与拼写建议。
-- 参数错误中的用法标题及帮助提示改为中文，文件占位符改为“文件”；帮助/版本的输出渠道和退出码保持原有规则。
-- macOS 本地构建直接输出原始程序目录。
+- Localized argument-parsing diagnostics: missing inputs, unknown commands/options, invalid values, conflicting arguments, and count errors now show Chinese messages, keeping allowed values and spelling suggestions.
+- Usage headings and help hints in argument errors became Chinese, and the file placeholder was localized; help/version output channels and exit codes follow the original rules.
+- The macOS local build outputs the raw program directory directly.
 
 ## 0.1.1 — 2026-09-30
 
-- 重新组织 CLI 帮助：明确命令选择，按输入、查询、AI、报告和限制分组，补充示例及配置步骤。
-- `-h` 与 `--help` 提供相同说明。
-- 拆分各命令的参数：日志格式仅在 logs/analyze 指定；Web 格式与自动日志加载用于 logs/analyze；采集进程加入混合分析使用 analyze 的 `--live-processes`；PCAP 载荷发送用于 pcap/analyze。
-- 缺少文件/采集来源、不适用的参数及 AI matches 缺少筛选条件，在参数解析时提示错误并返回退出码 2。
-- macOS 发布包为 Apple Silicon arm64，使用现有共享分析核心。
+- Reorganized CLI help: clearer command selection, grouped by input, queries, AI, reports, and limits, with added examples and configuration steps.
+- `-h` and `--help` provide the same information.
+- Split arguments per command: log format is specified only in logs/analyze; web format and automatic log loading apply to logs/analyze; including collected processes in mixed analysis uses analyze's `--live-processes`; PCAP payload sending applies to pcap/analyze.
+- Missing files/collection sources, inapplicable arguments, and AI matches missing filter conditions error out during argument parsing and return exit code 2.
+- The macOS release build is Apple Silicon arm64, using the existing shared analysis core.
 
 ## 0.1.0 — 2026-09-30
 
-- 首版 Rust CLI：日志、进程、PCAP 分析，本地规则和查询，OpenAI 兼容 AI，终端/JSON/HTML 报告。
-- Git 管理、合成样本及 Windows/Linux/macOS 构建配置。
+- First Rust CLI release: log, process, and PCAP analysis; local rules and queries; OpenAI-compatible AI; terminal/JSON/HTML reports.
+- Git management, synthetic samples, and Windows/Linux/macOS build configuration.

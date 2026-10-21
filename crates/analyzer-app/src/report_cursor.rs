@@ -326,7 +326,7 @@ impl AnalysisSession {
                 let batches = &r
                     .ai_runs
                     .get(run_index)
-                    .ok_or_else(|| anyhow::anyhow!("AI 运行不存在"))?
+                    .ok_or_else(|| anyhow::anyhow!("The AI run does not exist"))?
                     .batch_results;
                 Ok(Page {
                     offset,

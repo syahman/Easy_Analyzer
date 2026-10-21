@@ -20,26 +20,26 @@ it("submits combined dimensions with timezone-bearing bounds", async () => {
       onClose={() => {}}
     />,
   );
-  fireEvent.change(screen.getByLabelText("开始时间（本地）"), {
+  fireEvent.change(screen.getByLabelText("Start time (local)"), {
     target: { value: "2026-10-14T09:00:00" },
   });
-  fireEvent.change(screen.getByLabelText("结束时间（本地）"), {
+  fireEvent.change(screen.getByLabelText("End time (local)"), {
     target: { value: "2026-10-14T18:00:00" },
   });
-  fireEvent.change(screen.getByLabelText("Windows 事件 ID"), {
+  fireEvent.change(screen.getByLabelText("Windows event IDs"), {
     target: { value: "4624,4625" },
   });
-  fireEvent.change(screen.getByLabelText("日志通道"), {
+  fireEvent.change(screen.getByLabelText("Log channel"), {
     target: { value: "Security" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "添加条件" }));
-  fireEvent.change(screen.getByLabelText("查询字段 1"), {
+  fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
+  fireEvent.change(screen.getByLabelText("Query field 1"), {
     target: { value: "user" },
   });
-  fireEvent.change(screen.getByLabelText("查询字段值 1"), {
-    target: { value: "用户甲" },
+  fireEvent.change(screen.getByLabelText("Query field value 1"), {
+    target: { value: "userA" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "应用查询" }));
+  fireEvent.click(screen.getByRole("button", { name: "Apply query" }));
   await waitFor(() =>
     expect(apply).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -47,7 +47,7 @@ it("submits combined dimensions with timezone-bearing bounds", async () => {
         time_until: queryTime("2026-10-14T18:00:00"),
         event_ids: "4624,4625",
         channel: "Security",
-        fields: [{ field: "user", value: "用户甲", mode: "contains" }],
+        fields: [{ field: "user", value: "userA", mode: "contains" }],
       }),
     ),
   );
@@ -62,20 +62,20 @@ it("rejects reversed time ranges and leaves the last query unchanged", async () 
       onClose={() => {}}
     />,
   );
-  fireEvent.change(screen.getByLabelText("开始时间（本地）"), {
+  fireEvent.change(screen.getByLabelText("Start time (local)"), {
     target: { value: "2026-10-14T18:00:00" },
   });
-  fireEvent.change(screen.getByLabelText("结束时间（本地）"), {
+  fireEvent.change(screen.getByLabelText("End time (local)"), {
     target: { value: "2026-10-14T09:00:00" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "应用查询" }));
+  fireEvent.click(screen.getByRole("button", { name: "Apply query" }));
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "查询结束时间不能早于开始时间",
+    "End time must not be earlier than start time",
   );
   expect(apply).not.toHaveBeenCalled();
 });
 it("retains a failed query draft and does not submit during Chinese composition", async () => {
-  const apply = vi.fn().mockRejectedValue("合成查询错误");
+  const apply = vi.fn().mockRejectedValue("synthetic query error");
   render(
     <LogQueryDialog
       initial={defaultLogQuery()}
@@ -84,15 +84,15 @@ it("retains a failed query draft and does not submit during Chinese composition"
       onClose={() => {}}
     />,
   );
-  const field = screen.getByLabelText("事件提供程序");
+  const field = screen.getByLabelText("Event provider");
   fireEvent.change(field, { target: { value: "Security" } });
   fireEvent.compositionStart(field);
   fireEvent.submit(field.closest("form")!);
   expect(apply).not.toHaveBeenCalled();
   fireEvent.compositionEnd(field);
-  fireEvent.click(screen.getByRole("button", { name: "应用查询" }));
+  fireEvent.click(screen.getByRole("button", { name: "Apply query" }));
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "保留上一次有效查询",
+    "The last valid query is kept.",
   );
   expect(field).toHaveValue("Security");
 });
@@ -103,8 +103,8 @@ it("converts local bounds consistently and keeps timezone-less evidence unknown"
   expect(displayLogTime("2026-10-14 00:00:00 UTC")).toBe(
     displayLogTime("2026-10-14T00:00:00Z"),
   );
-  expect(displayLogTime("2026-10-14 09:00:00")).toBe("未知");
-  expect(displayLogTime(null)).toBe("未知");
+  expect(displayLogTime("2026-10-14 09:00:00")).toBe("Unknown");
+  expect(displayLogTime(null)).toBe("Unknown");
 });
 
 it("submits middleware dimensions and an explicit source timezone", async () => {
@@ -118,22 +118,22 @@ it("submits middleware dimensions and an explicit source timezone", async () => 
     />,
   );
   expect(
-    screen.getByRole("combobox", { name: "无时区日志的时区" }),
+    screen.getByRole("combobox", { name: "Time zone for logs without one" }),
   ).toHaveTextContent("UTC+06:40");
   for (const [label, value] of [
-    ["日志级别", "ERROR, SEVERE"],
-    ["客户端 IP", "192.0.2.10"],
-    ["HTTP 状态码", "500,403"],
-    ["请求方法", "POST"],
-    ["请求路径", "/api/"],
-    ["日志类 / Logger", "org.apache.catalina"],
+    ["Log level", "ERROR, SEVERE"],
+    ["Client IP", "192.0.2.10"],
+    ["HTTP status", "500,403"],
+    ["Request method", "POST"],
+    ["Request path", "/api/"],
+    ["Logger class", "org.apache.catalina"],
   ]) {
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
   }
-  fireEvent.input(screen.getByLabelText("开始时间（本地）"), {
+  fireEvent.input(screen.getByLabelText("Start time (local)"), {
     target: { value: "2026-10-14T09:00:00" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "应用查询" }));
+  fireEvent.click(screen.getByRole("button", { name: "Apply query" }));
   await waitFor(() =>
     expect(apply).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -159,12 +159,12 @@ it("rejects invalid HTTP codes without applying", async () => {
       onClose={() => {}}
     />,
   );
-  fireEvent.change(screen.getByLabelText("HTTP 状态码"), {
+  fireEvent.change(screen.getByLabelText("HTTP status"), {
     target: { value: "999" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "应用查询" }));
+  fireEvent.click(screen.getByRole("button", { name: "Apply query" }));
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "HTTP 状态码必须为 100 到 599",
+    "HTTP status must be integers from 100 to 599",
   );
   expect(apply).not.toHaveBeenCalled();
 });

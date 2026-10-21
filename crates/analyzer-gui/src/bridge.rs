@@ -88,14 +88,14 @@ impl Desktop {
         })))
     }
     pub fn lock(&self) -> Result<MutexGuard<'_, Inner>> {
-        self.0.lock().map_err(|_| anyhow!("界面状态不可用"))
+        self.0.lock().map_err(|_| anyhow!("UI state unavailable"))
     }
     pub fn session(&self, id: u64) -> Result<AnalysisSession> {
         self.lock()?
             .session
             .clone()
             .filter(|s| s.id() == id)
-            .ok_or_else(|| anyhow!("会话已变化，请刷新视图"))
+            .ok_or_else(|| anyhow!("Session changed, refresh the view"))
     }
 }
 fn status_name(s: TaskStatus) -> String {
@@ -111,16 +111,16 @@ fn status_name(s: TaskStatus) -> String {
 }
 fn stage_name(s: Stage) -> String {
     match s {
-        Stage::Reading => "读取文件",
-        Stage::Hashing => "计算哈希",
-        Stage::Parsing => "解析证据",
-        Stage::Collecting => "本机采集",
-        Stage::Rules => "本地规则",
-        Stage::Query => "筛选记录",
-        Stage::Flows => "网络会话",
-        Stage::AiPreparing => "准备 AI 证据",
-        Stage::Ai => "AI 批次",
-        Stage::Finalizing => "整理结果",
+        Stage::Reading => "Reading files",
+        Stage::Hashing => "Computing hashes",
+        Stage::Parsing => "Parsing evidence",
+        Stage::Collecting => "Collecting host",
+        Stage::Rules => "Local rules",
+        Stage::Query => "Filtering records",
+        Stage::Flows => "Network sessions",
+        Stage::AiPreparing => "Preparing AI evidence",
+        Stage::Ai => "AI batch",
+        Stage::Finalizing => "Finalizing results",
     }
     .into()
 }
@@ -162,7 +162,7 @@ fn bootstrap_value(s: &Inner) -> Bootstrap {
 }
 fn atomic_preferences(path: &Path, prefs: &Preferences) -> Result<()> {
     use std::io::Write;
-    fs::create_dir_all(path.parent().ok_or_else(|| anyhow!("偏好目录不存在"))?)?;
+    fs::create_dir_all(path.parent().ok_or_else(|| anyhow!("Unable to determine the preferences directory"))?)?;
     let mut file = tempfile::NamedTempFile::new_in(path.parent().unwrap())?;
     file.write_all(&serde_json::to_vec_pretty(prefs)?)?;
     file.as_file().sync_all()?;
@@ -178,7 +178,7 @@ pub async fn request_elevation(
     {
         let mut s = desktop.lock().map_err(|e| e.to_string())?;
         if s.busy.is_some() || s.elevation_pending {
-            return Err("请等待当前任务或 UAC 授权完成".into());
+            return Err("Wait for the current task or UAC authorization to finish".into());
         }
         s.elevation_pending = true;
     }
@@ -187,7 +187,7 @@ pub async fn request_elevation(
         s.elevation_pending = false;
     }
     rpc(result
-        .map_err(|e| anyhow!("Windows 提权任务失败：{e}"))
+        .map_err(|e| anyhow!("Windows elevation task failed: {e}"))
         .and_then(|value| value))
 }
 #[tauri::command]
@@ -221,7 +221,7 @@ pub async fn initialize(app: AppHandle, state: State<'_, Desktop>) -> Rpc<Bootst
                             s.config = c;
                             s.config_loaded = true;
                         }
-                        Err(e) => s.config_error = Some(format!("配置读取失败：{e:#}")),
+                        Err(e) => s.config_error = Some(format!("Failed to read config: {e:#}")),
                     }
                 }
                 s.initialized = true;
@@ -306,14 +306,14 @@ fn start_session_job(
 ) -> Result<TaskMessage> {
     let mut s = desktop.lock()?;
     if s.busy.is_some() || s.elevation_pending {
-        bail!("请等待当前任务完成");
+        bail!("Wait for the current task to finish");
     }
     s.ai_preview = None;
     if let Some(token) = s.preview_cancel.take() {
         token.cancel();
     }
     if expected_session.is_some_and(|id| s.session.as_ref().map(AnalysisSession::id) != Some(id)) {
-        bail!("会话已变化，请重新计算发送预览");
+        bail!("Session changed, recompute the send preview");
     }
     let handle = task::spawn_operation(run);
     let mut message = TaskMessage {
@@ -355,11 +355,11 @@ fn start_session_job(
                     if p.stage == Stage::Ai
                         && p.source
                             .as_deref()
-                            .is_some_and(|source| source.starts_with("跨批汇总"))
+                            .is_some_and(|source| source.starts_with("Cross-batch synthesis"))
                     {
                         p.source.unwrap()
-                    } else if p.source.as_deref() == Some("跨批汇总") {
-                        "准备跨批汇总".into()
+                    } else if p.source.as_deref() == Some("Cross-batch synthesis") {
+                        "Preparing cross-batch synthesis".into()
                     } else {
                         stage_name(p.stage)
                     },
@@ -453,13 +453,13 @@ pub fn start_import(
         let request = request.request()?;
         let session = state.lock()?.session.clone();
         if session.as_ref().is_none_or(|p| !p.is_project()) && !state.lock()?.args.qa {
-            bail!("请先新建应急响应项目并填写项目名称和客户单位");
+            bail!("Create an incident response project first and fill in the project name and client organization");
         }
         start_job(
             app,
             state.inner().clone(),
             "import",
-            "本地分析",
+            "Local analysis",
             move |ctx| {
                 Ok(WorkerResult::Outcome(
                     if let Some(session) = session.filter(|p| p.is_project()) {
@@ -489,7 +489,7 @@ pub fn reset_session(state: State<'_, Desktop>) -> Rpc<()> {
     rpc((|| {
         let mut s = state.lock()?;
         if s.busy.is_some() {
-            bail!("任务仍在运行，请先取消并等待返回");
+            bail!("A task is still running, cancel it and wait for it to return first");
         }
         s.epoch += 1;
         s.session = None;
@@ -509,7 +509,7 @@ pub fn build_view(
     ctx: &ExecutionContext,
 ) -> Result<(ViewResponse, Option<RecordSelection>)> {
     if ![50, 100, 200].contains(&request.filters.limit) {
-        bail!("分页大小必须为 50、100 或 200");
+        bail!("Page size must be 50, 100 or 200");
     }
     let filters = &request.filters;
     let overview = session.overview(ctx)?;
@@ -697,7 +697,7 @@ fn commit_view(
     if s.session.as_ref().map(AnalysisSession::id) != Some(session.id())
         || s.latest_view != request.revision
     {
-        bail!("已忽略旧会话或过期视图");
+        bail!("Ignored stale session or outdated view");
     }
     if request.commit_selection
         && request.focus_id.is_none()
@@ -727,7 +727,7 @@ pub async fn get_view(state: State<'_, Desktop>, request: ViewRequest) -> Rpc<Vi
     {
         let mut s = rpc(desktop.lock())?;
         if request.revision < s.latest_view {
-            return Err("已忽略过期视图请求".into());
+            return Err("Ignored outdated view request".into());
         }
         s.latest_view = request.revision;
         if let Some(old) = s.read_cancel.replace(token.clone()) {
@@ -767,7 +767,7 @@ pub async fn get_detail(
     let session = rpc(state.session(session_id))?;
     rpc(
         tauri::async_runtime::spawn_blocking(move || -> Result<DetailResponse> {
-            let record = session.record(&id)?.ok_or_else(|| anyhow!("证据不存在"))?;
+            let record = session.record(&id)?.ok_or_else(|| anyhow!("Evidence not found"))?;
             Ok(DetailResponse {
                 session_id,
                 source: session.source(&record.source_id)?,
@@ -817,45 +817,45 @@ pub fn config_operation(
         let desktop = state.inner().clone();
         let mut s = desktop.lock()?;
         if s.busy.is_some() {
-            bail!("请等待当前任务完成");
+            bail!("Wait for the current task to finish");
         }
         s.prefs.config_path = path.clone();
         let config = s.config.clone();
         drop(s);
         match operation.as_str() {
-            "load" => start_job(app, desktop, "config_load", "读取配置", move |ctx| {
+            "load" => start_job(app, desktop, "config_load", "Read config", move |ctx| {
                 ctx.check()?;
                 Ok(WorkerResult::Config(ConfigService::load(Path::new(&path))?))
             }),
-            "save" => start_job(app, desktop, "config_save", "保存配置", move |ctx| {
+            "save" => start_job(app, desktop, "config_save", "Save config", move |ctx| {
                 ctx.check()?;
                 ConfigService::save(Path::new(&path), &config)?;
                 Ok(WorkerResult::Saved(vec![path.into()]))
             }),
-            "check" => start_job(app, desktop, "config_check", "检查连接", move |ctx| {
+            "check" => start_job(app, desktop, "config_check", "Check connection", move |ctx| {
                 ctx.check()?;
                 ConfigService::check(&config)?;
                 Ok(WorkerResult::Checked)
             }),
-            _ => bail!("未知配置操作"),
+            _ => bail!("Unknown config operation"),
         }
     })())
 }
 fn ai_options(s: &Inner, request: &AiRequest) -> Result<(AiOptions, Option<RecordSelection>)> {
     if !s.config_loaded {
-        bail!("请先加载或保存配置");
+        bail!("Load or save the config first");
     }
     let scope = match request.scope.as_str() {
         "all" => AiScope::All,
         "matches" => AiScope::Matches,
         "suspicious" => AiScope::Suspicious,
-        _ => bail!("无效的 AI 范围"),
+        _ => bail!("Invalid AI scope"),
     };
     let selected = if scope == AiScope::Matches {
         if request.selection_id != Some(s.selection_info.id) {
-            bail!("筛选范围已变化，请确认最新有效筛选");
+            bail!("Filter scope changed, confirm the latest valid filter");
         }
-        Some(s.selection.clone().ok_or_else(|| anyhow!("尚无有效筛选"))?)
+        Some(s.selection.clone().ok_or_else(|| anyhow!("No valid filter yet"))?)
     } else {
         None
     };
@@ -863,7 +863,7 @@ fn ai_options(s: &Inner, request: &AiRequest) -> Result<(AiOptions, Option<Recor
         && !(s.config.base_url.starts_with("http://127.0.0.1:")
             || s.config.base_url.starts_with("http://[::1]:"))
     {
-        bail!("验收 AI 仅允许本机回环模拟服务");
+        bail!("QA AI only allows a local loopback mock service");
     }
     Ok((
         AiOptions {
@@ -883,7 +883,7 @@ pub async fn prepare_ai(state: State<'_, Desktop>, request: AiRequest) -> Rpc<Ai
     let (options, selected, config, epoch, id) = rpc((|| {
         let mut s = desktop.lock()?;
         if s.busy.is_some() || s.elevation_pending {
-            bail!("请等待当前任务完成");
+            bail!("Wait for the current task to finish");
         }
         let (options, selected) = ai_options(&s, &request)?;
         s.next_ai_preview += 1;
@@ -922,7 +922,7 @@ pub async fn prepare_ai(state: State<'_, Desktop>, request: AiRequest) -> Rpc<Ai
                 || s.session.as_ref().map(AnalysisSession::id) != Some(request.session_id)
                 || (request.scope == "matches" && request.selection_id != Some(s.selection_info.id))
             {
-                bail!("发送预览已过期，请重新计算");
+                bail!("Send preview expired, recompute it");
             }
             s.preview_cancel = None;
             s.ai_preview = Some(FrozenAi {
@@ -943,7 +943,7 @@ fn take_ai_plan(s: &mut Inner, request: &AiRequest) -> Result<PreparedAiAnalysis
     let plan = s
         .ai_preview
         .as_ref()
-        .ok_or_else(|| anyhow!("请先完成发送预览"))?;
+        .ok_or_else(|| anyhow!("Complete the send preview first"))?;
     if request.plan_id != Some(plan.id)
         || plan.epoch != s.epoch
         || plan.config != s.config
@@ -954,7 +954,7 @@ fn take_ai_plan(s: &mut Inner, request: &AiRequest) -> Result<PreparedAiAnalysis
         || s.session.as_ref().map(AnalysisSession::id) != Some(request.session_id)
         || (request.scope == "matches" && request.selection_id != Some(s.selection_info.id))
     {
-        bail!("发送范围或设置已变化，请重新计算预览");
+        bail!("Send scope or settings changed, recompute the preview");
     }
     Ok(s.ai_preview.take().unwrap().prepared)
 }
@@ -969,7 +969,7 @@ pub async fn start_ai(
         let desktop = state.inner().clone();
         let mut s = desktop.lock()?;
         if s.busy.is_some() || s.elevation_pending {
-            bail!("请等待当前任务完成");
+            bail!("Wait for the current task to finish");
         }
         ai_options(&s, &request)?;
         let prepared = take_ai_plan(&mut s, &request)?;
@@ -978,7 +978,7 @@ pub async fn start_ai(
             app,
             desktop,
             "ai",
-            "AI 分析",
+            "AI analysis",
             Some(request.session_id),
             move |ctx| {
                 Ok(WorkerResult::Outcome(AnalysisService::analyze_prepared_ai(
@@ -999,13 +999,13 @@ pub async fn start_export(
         let session = desktop.session(request.session_id)?;
         let s = desktop.lock()?;
         if request.path.trim().is_empty() || (!request.html && !request.json) {
-            bail!("请选择导出格式和路径");
+            bail!("Select an export format and path");
         }
         if request
             .selection_id
             .is_some_and(|id| id != s.selection_info.id)
         {
-            bail!("筛选范围已变化，请刷新后导出");
+            bail!("Filter scope changed, refresh before exporting");
         }
         let selection = s.selection.clone();
         let config = s.prefs.config_path.clone();
@@ -1014,7 +1014,7 @@ pub async fn start_export(
         let html = request.html.then(|| path.with_extension("html"));
         let json = request.json.then(|| path.with_extension("json"));
         if !request.overwrite && html.iter().chain(json.iter()).any(|p| p.exists()) {
-            bail!("目标报告已存在，请确认覆盖");
+            bail!("Target report already exists, confirm overwrite");
         }
         let plan = ExportPlan {
             format: if request.html {
@@ -1027,7 +1027,7 @@ pub async fn start_export(
             json_path: json,
             ..Default::default()
         };
-        start_job(app, desktop, "export", "导出完整报告", move |ctx| {
+        start_job(app, desktop, "export", "Export full report", move |ctx| {
             ctx.check()?;
             session.set_selection(selection.as_ref(), ctx)?;
             Ok(WorkerResult::Saved(
@@ -1043,18 +1043,18 @@ pub async fn pick_paths(app: AppHandle, kind: String) -> Rpc<Vec<String>> {
         let dialog = app.dialog().file();
         let paths = match kind.as_str() {
             "project_save" => dialog
-                .add_filter("Easy Analyzer 项目", &["eair"])
-                .set_file_name("响应项目.eair")
+                .add_filter("Easy Analyzer project", &["eair"])
+                .set_file_name("incident-project.eair")
                 .blocking_save_file()
                 .into_iter()
                 .collect(),
             "project_open" => dialog
-                .add_filter("Easy Analyzer 项目", &["eair"])
+                .add_filter("Easy Analyzer project", &["eair"])
                 .blocking_pick_file()
                 .into_iter()
                 .collect(),
             "ioc" => dialog
-                .add_filter("IOC 清单", &["txt", "csv"])
+                .add_filter("IOC list", &["txt", "csv"])
                 .blocking_pick_files()
                 .unwrap_or_default(),
             "inputs" => dialog.blocking_pick_files().unwrap_or_default(),
@@ -1080,7 +1080,7 @@ pub async fn pick_paths(app: AppHandle, kind: String) -> Rpc<Vec<String>> {
 fn editable_project(state: &Desktop, id: u64) -> Result<AnalysisSession> {
     let mut s = state.lock()?;
     if s.busy.is_some() {
-        bail!("请等待当前任务完成");
+        bail!("Wait for the current task to finish");
     }
     s.ai_preview = None;
     if let Some(c) = s.preview_cancel.take() {
@@ -1089,7 +1089,7 @@ fn editable_project(state: &Desktop, id: u64) -> Result<AnalysisSession> {
     s.session
         .clone()
         .filter(|p| p.id() == id && p.is_project())
-        .ok_or_else(|| anyhow!("项目已切换，请刷新"))
+        .ok_or_else(|| anyhow!("Project changed, refresh"))
 }
 #[tauri::command]
 pub async fn project_list_page(
@@ -1122,7 +1122,7 @@ pub async fn project_remove(state: State<'_, Desktop>, id: String, path: String)
     let root = rpc((|| {
         let s = state.lock()?;
         if s.busy.is_some() {
-            bail!("请等待当前任务完成");
+            bail!("Wait for the current task to finish");
         }
         Ok(s.data_dir.clone())
     })())?;
@@ -1142,7 +1142,7 @@ pub fn project_create(
         app,
         state.inner().clone(),
         "project_create",
-        "新建应急响应项目",
+        "Create incident response project",
         move |ctx| {
             ctx.check()?;
             Ok(WorkerResult::Outcome(AnalysisOutcome {
@@ -1159,7 +1159,7 @@ pub fn project_open(app: AppHandle, state: State<'_, Desktop>, path: String) -> 
         app,
         state.inner().clone(),
         "project_open",
-        "打开应急响应项目",
+        "Open incident response project",
         move |ctx| {
             let session = ProjectService::open(Path::new(&path), ctx)?;
             ProjectCatalog::open(&root)?.register(&session)?;
@@ -1188,7 +1188,7 @@ pub fn project_save(
             app,
             state.inner().clone(),
             "project_save",
-            "保存项目",
+            "Save project",
             Some(session_id),
             move |ctx| {
                 let path =
@@ -1275,7 +1275,7 @@ pub async fn import_ioc(
             sources.push(IocSource::Text {
                 text: input.text,
                 csv: input.csv,
-                origin: "粘贴清单".into(),
+                origin: "Pasted list".into(),
             });
         }
         if !input.value.trim().is_empty() {
@@ -1342,7 +1342,7 @@ pub fn start_ioc_scan(
             app,
             state.inner().clone(),
             "ioc_scan",
-            "IOC 匹配",
+            "IOC matching",
             Some(session_id),
             move |ctx| {
                 let run = IocService::scan(&session, include_subdomains, ctx)?;

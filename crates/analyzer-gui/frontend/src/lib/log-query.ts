@@ -4,14 +4,14 @@ export function logTypeLabel(category: string): string {
   return (
     (
       {
-        windows_event: "Windows 事件",
-        auth_text: "系统 / 认证文本",
-        web_access: "Web 访问",
-        web_error: "Web 错误",
-        application_log: "应用 / 中间件日志",
-        utmp: "当前登录",
-        wtmp: "登录历史",
-        btmp: "失败登录",
+        windows_event: "Windows events",
+        auth_text: "System / auth text",
+        web_access: "Web access",
+        web_error: "Web errors",
+        application_log: "Application / middleware logs",
+        utmp: "Current sessions",
+        wtmp: "Login history",
+        btmp: "Failed logins",
       } as Record<string, string>
     )[category] || category
   );
@@ -49,20 +49,20 @@ export function queryTime(value: string): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 export function displayLogTime(value: string | null): string {
-  if (!value) return "未知";
+  if (!value) return "Unknown";
   const normalized = value.replace(/ UTC$/, "Z").replace(" ", "T");
-  if (!/(?:Z|[+-]\d{2}:\d{2})$/i.test(normalized)) return "未知";
+  if (!/(?:Z|[+-]\d{2}:\d{2})$/i.test(normalized)) return "Unknown";
   const local = localTimeInput(normalized);
-  return local ? local.replace("T", " ") : "未知";
+  return local ? local.replace("T", " ") : "Unknown";
 }
 export function displayRecordLogTime(record: RecordSummary): string {
   const time = displayLogTime(record.timestamp);
-  if (time !== "未知" || record.data.kind !== "log") return time;
+  if (time !== "Unknown" || record.data.kind !== "log") return time;
   const raw =
     record.timestamp ||
     record.data.fields.fields.time ||
     record.data.fields.fields.timestamp;
-  return raw ? `${raw}（原始）` : time;
+  return raw ? `${raw} (raw)` : time;
 }
 export function logQueryCount(query: LogQuery): number {
   return (
@@ -87,37 +87,41 @@ export function logQueryCount(query: LogQuery): number {
 export function validateLogQuery(query: LogQuery): void {
   if (
     [query.log_level, query.method, query.http_status].some(
-      (v) => v.trim() && !v.split(/[,，;\s]+/).filter(Boolean).length,
+      (v) => v.trim() && !v.split(/[,;\s]+/).filter(Boolean).length,
     )
   )
-    throw new Error("列表条件至少包含一个有效值");
+    throw new Error("List conditions must include at least one valid value");
   if (
     query.http_status.trim() &&
     query.http_status
-      .split(/[,，;\s]+/)
+      .split(/[,;\s]+/)
       .filter(Boolean)
       .some((v) => !/^\d{3}$/.test(v) || Number(v) < 100 || Number(v) > 599)
   )
-    throw new Error("HTTP 状态码必须为 100 到 599 的整数，多个值用逗号分隔");
+    throw new Error(
+      "HTTP status must be integers from 100 to 599, separated by commas",
+    );
   if (
     query.event_ids.trim() &&
-    query.event_ids.split(/[,，;\s]+/).filter(Boolean).length === 0
+    query.event_ids.split(/[,;\s]+/).filter(Boolean).length === 0
   )
-    throw new Error("请至少填写一个有效事件 ID");
+    throw new Error("Enter at least one valid event ID");
   if (
     query.time_from &&
     query.time_until &&
     new Date(query.time_until) < new Date(query.time_from)
   )
-    throw new Error("查询结束时间不能早于开始时间");
+    throw new Error("End time must not be earlier than start time");
   if (
     query.event_ids.trim() &&
     query.event_ids
-      .split(/[,，;\s]+/)
+      .split(/[,;\s]+/)
       .filter(Boolean)
       .some((v) => !/^\d+$/.test(v) || Number(v) > 65535)
   )
-    throw new Error("事件 ID 必须为 0 到 65535 的整数，多个 ID 用逗号分隔");
+    throw new Error(
+      "Event IDs must be integers from 0 to 65535, separated by commas",
+    );
   if (query.fields.some((f) => !f.field.trim() || !f.value.trim()))
-    throw new Error("自定义条件须同时填写字段名和字段值");
+    throw new Error("Custom conditions need both a field name and a value");
 }

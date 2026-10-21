@@ -1,176 +1,174 @@
 # Easy Analyzer
 
-**简体中文** | [English](README.en.md)
+**Bring logs, process snapshots, and packet captures into one incident case. Investigate leads, check the original evidence, and preserve your analysis.**
 
-**把日志、进程快照和抓包证据放进一个案件，筛查线索、核对原文、保存分析过程。**
+Easy Analyzer is a cross-platform incident response analysis tool built with Rust, with both a command-line interface (CLI) and a desktop GUI. It supports Windows x64, Linux x64, and macOS ARM64 for offline evidence analysis, on-site investigation, and incident cases that continue across multiple days.
 
-Easy Analyzer 是使用 Rust 开发的跨平台应急响应分析工具，提供命令行 CLI 和桌面 GUI。支持 Windows x64、Linux x64、macOS ARM64，适合离线证据分析、现场排查和多天续办的应急响应工作。
+Parsing, rule checks, and IOC matching run locally by default. For AI assistance, you select the evidence scope and explicitly send it to your configured OpenAI-compatible service.
 
-默认在本地完成解析、规则筛查与 IOC 匹配。需要 AI 辅助时，由用户选择证据范围并主动发送到配置的 OpenAI 兼容服务。
+[Download](https://github.com/MoShouSecurity/Easy_Analyzer/releases) · [Quick start](#quick-start) · [Screenshots](#screenshots) · [Projects and IOCs](docs/PROJECTS.md) · [Changelog](CHANGELOG.md)
 
-[下载安装](https://github.com/MoShouSecurity/Easy_Analyzer/releases) · [快速开始](#快速开始) · [界面截图](#界面截图) · [项目与 IOC 说明](docs/PROJECTS.md) · [更新记录](CHANGELOG.md)
+## Features
 
-## 能做什么
+| Capability               | What it does                                                                                                                                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Log analysis             | Import Windows EVTX, Linux login and SSH logs, Apache/Nginx access and error logs, and plain text. Supports custom web log formats, keyword searches, and regular expressions.                                                                                                       |
+| Local rules              | Flag leads such as repeated failed logins, successful logins after failures, account and privilege changes, log clearing, service and scheduled task changes, suspicious script execution, and web attack requests.                                                                  |
+| Process analysis         | Collect local processes or import JSON snapshots. Inspect process trees, paths, and command lines, and flag patterns such as encoded execution, download-and-run commands, execution from temporary directories, and Office launching script interpreters.                           |
+| Offline traffic analysis | Import PCAP/PCAPNG files, inspect packets and bidirectional network sessions, and summarize packet counts, byte counts, and time ranges. Extract selected HTTP fields and DNS query names, with basic TLS protocol identification.                                                   |
+| Case management          | Save each incident as a separate `.eair` project. Record client and response details, append evidence over time, and retain notes, AI history, IOC lists, and filters.                                                                                                               |
+| IOC matching             | Import IPv4/IPv6 addresses, domains, and HTTP/HTTPS URLs from TXT/CSV, pasted text, or manual entry. Scan the current project offline, inspect matched values and field positions, and jump to the evidence.                                                                         |
+| AI assistance            | Analyze all evidence, the current filter, or locally flagged suspicious items. Preview scope and budget before sending; split requests into batches and summarize across batches according to your configuration. Validate evidence references and retain valid results and history. |
+| Response commands        | Browse, search, and copy 24 Windows commands and 24 Linux commands across six categories. Each includes execution environment, permissions, compatibility conditions, and parameter notes. No project is required, and the tool does not execute these commands.                     |
+| Report export            | Export complete HTML/JSON reports with evidence sources, original records, and finding references. UI filters and pagination do not truncate the full evidence set in the report.                                                                                                    |
 
-| 能力     | 当前功能                                                                                                                                |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| 日志分析 | 导入 Windows EVTX、Linux 登录与 SSH 日志、Apache/Nginx 访问及错误日志、普通文本；支持自定义 Web 日志格式、关键词和正则筛选。            |
-| 本地规则 | 筛查重复失败登录、失败后成功登录、账号与权限变更、日志清除、服务与计划任务变更、可疑脚本执行和 Web 攻击请求等线索。                     |
-| 进程分析 | 采集本机进程或导入 JSON 快照，查看进程树、路径与命令行，识别编码执行、下载执行、临时目录运行和 Office 启动脚本解释器等特征。            |
-| 离线流量 | 导入 PCAP/PCAPNG，查看数据包和双向网络会话，汇总包数、字节数及起止时间；提取部分 HTTP 字段、DNS 查询名，做基础 TLS 识别。               |
-| 案件管理 | 每次响应保存为独立 `.eair` 项目，记录客户与响应资料，持续追加证据，保留备注、AI 历史、IOC 清单和筛选条件。                              |
-| IOC 匹配 | 从 TXT/CSV、粘贴或手动输入 IPv4/IPv6、域名、HTTP/HTTPS URL，在当前项目中离线扫描，查看命中值、字段位置并跳转证据。                      |
-| AI 辅助  | 按全部证据、当前筛选或本地可疑项分析；发送前预览范围与预算，按配置分批及跨批汇总，校验证据引用，保留有效结果和历史。                    |
-| 命令速查 | Windows、Linux 各 24 条排查与取证命令，按六类浏览、搜索和复制；附执行环境、权限、适用条件与参数说明。无需打开项目，工具不执行这些命令。 |
-| 报告导出 | 导出完整 HTML/JSON 报告，保留证据来源、原始记录和发现引用；界面筛选及分页不会裁剪报告中的完整证据集合。                                 |
+## Screenshots
 
-## 界面截图
+These screenshots were captured on **October 13, 2026**, from the **native macOS ARM64 GUI, version 1.5.0**. The projects, logs, process snapshots, and packet captures use synthetic samples, with no real client cases or external AI requests. The interface labels shown in the screenshots are in Chinese.
 
-以下截图拍摄于 **2026-10-13**，来自 **1.5.0 的 macOS ARM64 原生 GUI**。项目、日志、进程与抓包均为合成样本，没有使用真实客户案件，也没有调用外部 AI 服务。
+**Case overview: evidence totals and findings to investigate**
 
-**案件概览：汇总证据与待核查发现**
-
-![Easy Analyzer 1.5.0 浅色主题：案件资料、证据统计与本地风险发现](docs/screenshots/v1.5.0-overview-light.jpg)
+![Easy Analyzer 1.5.0 in light mode: case details, evidence counts, and local findings](docs/screenshots/v1.5.0-overview-light.jpg)
 
 <details>
-<summary>日志详情与 IOC 匹配</summary>
+<summary>Log details and IOC matches</summary>
 
-**日志证据 · 深色主题：筛选记录并查看保留的原文**
+**Log evidence · Dark mode: filter records and inspect the retained original text**
 
-![Easy Analyzer 1.5.0 深色主题：日志记录与原始证据详情](docs/screenshots/v1.5.0-logs-dark.jpg)
+![Easy Analyzer 1.5.0 in dark mode: log records and original evidence details](docs/screenshots/v1.5.0-logs-dark.jpg)
 
-**IOC 匹配 · 浅色主题：定位命中字段与证据**
+**IOC matching · Light mode: locate matched fields and evidence**
 
-![Easy Analyzer 1.5.0 浅色主题：IOC 命中值、字段位置与证据引用](docs/screenshots/v1.5.0-ioc-light.jpg)
+![Easy Analyzer 1.5.0 in light mode: IOC values, field positions, and evidence references](docs/screenshots/v1.5.0-ioc-light.jpg)
 
 </details>
 
 <details>
-<summary>Windows / Linux 应急命令库</summary>
+<summary>Windows / Linux response command library</summary>
 
-**Windows 命令 · 浅色主题**
+**Windows commands · Light mode**
 
-![Easy Analyzer 1.5.0 Windows 应急响应命令：分类、搜索、用途、权限和复制入口](docs/screenshots/v1.5.0-commands-windows-light.jpg)
+![Easy Analyzer 1.5.0 Windows response commands: categories, search, purpose, permissions, and copy buttons](docs/screenshots/v1.5.0-commands-windows-light.jpg)
 
-**Linux 命令 · 深色主题：网络排查分类**
+**Linux commands · Dark mode: network investigation category**
 
-![Easy Analyzer 1.5.0 Linux 网络排查命令：连接、端口、路由与进程网络信息](docs/screenshots/v1.5.0-commands-linux-dark.jpg)
+![Easy Analyzer 1.5.0 Linux network investigation commands: connections, ports, routes, and process network information](docs/screenshots/v1.5.0-commands-linux-dark.jpg)
 
 </details>
 
-## 下载与安装
+## Download and installation
 
-从 [GitHub Releases](https://github.com/MoShouSecurity/Easy_Analyzer/releases) 下载对应平台的程序。每次发布同时提供 CLI、GUI 与 `SHA256SUMS`；CLI 与 GUI 可以独立使用。
+Download the appropriate binaries from [GitHub Releases](https://github.com/MoShouSecurity/Easy_Analyzer/releases). Each release provides a CLI, a GUI, and `SHA256SUMS`. You can use the CLI and GUI independently.
 
-| 平台        | CLI                                               | GUI                                                                                                                 |
-| ----------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Windows x64 | `easy-analyzer-cli-windows-x64.exe`               | 正式版为 `easy-analyzer-gui-windows-x64.exe`；预览版提供 `easy-analyzer-gui-windows-x64-setup.exe`。需要 WebView2。 |
-| Linux x64   | `easy-analyzer-cli-linux-x64`                     | `easy-analyzer-gui-linux-x64`。需要 GTK 3 / WebKitGTK 4.1。                                                         |
-| macOS ARM64 | `easy-analyzer-cli-macos-arm64`，要求 macOS 11.0+ | `easy-analyzer-gui-macos-arm64.dmg`，要求 macOS 13.0+。打开后将 `Easy Analyzer.app` 拖入“应用程序”。                |
+| Platform    | CLI                                                   | GUI                                                                                                                                         |
+| ----------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows x64 | `easy-analyzer-cli-windows-x64.exe`                   | Stable releases provide `easy-analyzer-gui-windows-x64.exe`; previews provide `easy-analyzer-gui-windows-x64-setup.exe`. Requires WebView2. |
+| Linux x64   | `easy-analyzer-cli-linux-x64`                         | `easy-analyzer-gui-linux-x64`. Requires GTK 3 / WebKitGTK 4.1.                                                                              |
+| macOS ARM64 | `easy-analyzer-cli-macos-arm64`, requires macOS 11.0+ | `easy-analyzer-gui-macos-arm64.dmg`, requires macOS 13.0+. Open it and drag `Easy Analyzer.app` into Applications.                          |
 
-Linux 程序和 macOS CLI 首次运行前需要赋予执行权限，例如：
+Grant executable permission before running Linux binaries or the macOS CLI for the first time. For example, on Linux:
 
 ```sh
 chmod +x easy-analyzer-cli-linux-x64 easy-analyzer-gui-linux-x64
 ```
 
-macOS GUI 当前采用 ad-hoc 签名，未完成公证。不同平台的构建与桌面实机验证范围见项目说明，不以构建通过代替全部交互验证。
+The macOS GUI currently uses an ad-hoc signature and is not notarized. See the project documentation for the scope of build checks and testing on actual desktops; a successful build does not establish that every interaction has been verified.
 
-## 快速开始
+## Quick start
 
-### 桌面 GUI
+### Desktop GUI
 
-1. 在首页新建项目，填写客户单位和响应开始时间；同一响应可以持续多天，另一场响应新建项目。
-2. 选择或拖入日志、进程快照、PCAP/PCAPNG，开始本地分析。Windows/Linux 可主动加载本机常见日志，也可采集本机进程。
-3. 在“分析概览”查看发现，进入日志、进程或网络页面筛选记录，展开详情核对原文与来源。
-4. 在“IOC 匹配”追加清单并主动扫描，从命中结果跳转证据。追加证据或修改清单后，按提示重新扫描。
-5. 如需 AI，在设置中填写服务地址、模型与密钥，选择证据范围，查看发送预览后启动分析。
-6. 点击“保存”写入 `.eair`；按需导出 HTML/JSON 报告。命令速查可随时从左侧“应急响应命令”进入。
+1. Create a project on the home page and enter the client organization and response start time. An incident can continue across multiple days; create a new project for a separate incident.
+2. Select or drag in logs, process snapshots, and PCAP/PCAPNG files to start local analysis. On Windows/Linux, you can explicitly load common local logs or collect local processes.
+3. Open “Analysis overview” to inspect findings. Filter records on the log, process, or network pages, then open details to verify the original content and source.
+4. Add indicators in “IOC matching” and start a scan. Jump from a match to its evidence. Rescan as prompted after appending evidence or changing the IOC list.
+5. For AI assistance, configure the service URL, model, and API key in settings. Select an evidence scope, review the sending preview, and start analysis.
+6. Click “Save” to write the `.eair` file, and export HTML/JSON reports as needed. Open “Response commands” from the left sidebar at any time.
 
-项目打开后，可从顶部“编辑资料”或首页“当前项目资料”中的“编辑项目资料”修改名称、客户单位、响应起止时间、地点、服务人员和说明。“应用修改”后点击“保存”写回项目文件。
+After opening a project, use “Edit details” in the toolbar or “Edit project details” on the home page to change its name, client organization, response start/end times, location, responders, and description. Click “Apply changes”, then “Save” to write the changes to the project file.
 
-“日志证据”的“多维查询”支持时间范围、日志级别、客户端 IP、HTTP 状态码、方法、路径、Logger、主机和自定义字段，覆盖 Nginx/Apache、常见 Tomcat/Java 应用日志和系统认证日志；Windows 事件条件单独展开。支持按时间或原始顺序正序、倒序查看，完整集合查询后再分页。无时区日志可明确选择来源的 UTC 偏移，原文不变，条件随项目保存。详见 [日志多维查询](docs/PROJECTS.md#日志多维查询)。
+On “Log evidence”, the “multi-dimensional query” combines time ranges, levels, client IPs, HTTP status codes, methods, paths, loggers, hosts, and custom fields for Nginx/Apache, common Tomcat/Java application logs, and authentication logs. Windows-specific conditions expand separately. Ascending/descending chronological or original order applies before pagination. An explicit source UTC offset enables queries on full-date logs without a timezone, preserving original evidence. Query settings are saved with the project; see [log multi-dimensional query](docs/PROJECTS.md#log-multi-dimensional-query).
 
-项目、证据、发现、诊断、IOC、AI 历史及引用支持分页和页码跳转；大项目复用筛选结果与分页书签，列表按需加载详情。见 [分页与大型项目](docs/PROJECTS.md#分页与大型项目)。
+Projects, evidence, findings, diagnostics, IOCs, AI history, and references support pagination and direct page jumps. Large projects reuse selections and page bookmarks, with full details loaded on demand. See [pagination and large projects](docs/PROJECTS.md#pagination-and-large-projects).
 
-**项目采用手动保存。** 移动 `.eair` 到另一台机器后，可以继续查看已导入的证据和分析记录，无需原始输入文件或独立数据库服务。从项目列表移除记录会保留项目文件、证据和 IOC。
+**Projects are saved manually.** Move an `.eair` file to another machine to continue viewing imported evidence and analysis records, without the original input files or a separate database service. Removing a project from the catalog retains its project file, evidence, and IOCs.
 
-### 命令行 CLI
+### Command-line CLI
 
-下面以 `easy-analyzer` 为命令名；下载后可重命名 CLI，或将示例中的名称替换为实际文件名。Windows PowerShell 使用 `./文件名.exe` 运行。
+The examples use `easy-analyzer` as the executable name. You can rename the downloaded CLI or replace the name in the examples with its actual filename. In Windows PowerShell, run it as `./filename.exe`.
 
 ```sh
-# 用本地规则筛查日志
+# Check logs with local rules
 ./easy-analyzer logs cases/Security.evtx -s
 
-# 关键词或正则查询
+# Search with a keyword or regular expression
 ./easy-analyzer logs cases/auth.log -q "192.0.2.10"
 ./easy-analyzer logs cases/access.log -q 'union.*select|\.env' -r
 
-# 查看本机进程树，或导入已有快照
+# View the local process tree or import an existing snapshot
 ./easy-analyzer processes -t
 ./easy-analyzer processes cases/processes.json
 
-# 离线分析抓包并导出完整报告
+# Analyze a packet capture offline and export a complete report
 ./easy-analyzer pcap cases/capture.pcapng -H reports/network.html
 
-# 多种证据混合导入
+# Import multiple evidence types together
 ./easy-analyzer analyze cases/auth.log cases/processes.json cases/capture.pcapng
 
-# 查看全部命令与参数
+# List all commands and options
 ./easy-analyzer -h
 ```
 
-**创建项目、追加证据与续办：**
+**Create a project, append evidence, and continue a case:**
 
 ```sh
-./easy-analyzer project create response.eair --client "演示客户"
+./easy-analyzer project create response.eair --client "Demo client"
 ./easy-analyzer project import response.eair cases/auth.log cases/capture.pcapng \
   --ioc indicators.csv --ioc-value example.com
-./easy-analyzer project note response.eair --record EVIDENCE_ID --text "现场核查备注"
+./easy-analyzer project note response.eair --record EVIDENCE_ID --text "On-site investigation note"
 ./easy-analyzer project open response.eair -H reports/response.html
-./easy-analyzer project list --search "演示客户"
+./easy-analyzer project list --search "Demo client"
 ```
 
-项目名称默认使用客户单位，可用 `--name` 指定。`project import` 保存这次追加操作；`project open` 不重新解析或自动调用 AI。`EVIDENCE_ID` 需替换为实际记录编号。详细保存语义及更多示例见 [项目与 IOC 说明](docs/PROJECTS.md)。
+The project name defaults to the client organization; use `--name` to override it. `project import` saves the appended data. `project open` does not reparse evidence or invoke AI automatically. Replace `EVIDENCE_ID` with an actual record ID. See [Projects and IOCs](docs/PROJECTS.md) for detailed save behavior and more examples.
 
-**启用 AI：**
+**Enable AI assistance:**
 
 ```sh
 ./easy-analyzer config init
-# 在当前目录的 config.toml 中填写 base_url、model 和 api_key
+# Set base_url, model, and api_key in config.toml in the current directory
 ./easy-analyzer logs cases/Security.evtx -a -S suspicious
 ```
 
-新配置按模型上下文预算规划发送；预算需根据实际服务和模型能力调整。`config check` 可主动检查连接，会发送不含项目证据的小请求。
+New configurations plan requests using the model context budget. Adjust the budget to the capabilities of your service and model. `config check` explicitly tests connectivity with a small request that contains no project evidence.
 
-## IOC 格式
+## IOC format
 
-TXT 每行一个 IP、域名或完整 URL；CSV 列名为 `type,value`，可选 `note`：
+TXT files contain one IP address, domain, or complete URL per line. CSV uses `type,value` columns with an optional `note` column:
 
 ```csv
 type,value,note
-ip,192.0.2.10,待核查来源
-ip,2001:db8::1,示例 IPv6
-domain,example.com,示例域名
-url,https://example.com/a?q=1,示例 URL
+ip,192.0.2.10,Source to investigate
+ip,2001:db8::1,Example IPv6 address
+domain,example.com,Example domain
+url,https://example.com/a?q=1,Example URL
 ```
 
-域名默认包含子域名，CLI 可用 `--ioc-exact-domain` 改为精确匹配。URL 忽略片段，保留路径与查询参数差异。无效条目提示位置，其余有效条目继续导入；IOC 清单、说明和命中仅属于当前项目。
+Domain matching includes subdomains by default; use `--ioc-exact-domain` in the CLI for exact matches. URL matching ignores fragments while preserving path and query-string differences. Invalid entries are reported with their positions, and valid entries continue to import. IOC lists, notes, and matches belong only to the current project.
 
-## 数据与能力边界
+## Data handling and limitations
 
-- AI 仅在主动启用后发送所选证据，**不会自动脱敏**。PCAP 默认发送解析摘要，原始包与载荷需要额外选择；`.eair` 不保存 AI 密钥。
-- `.eair` 是内置 SQLite 管理的独立项目文件，证据数据无损压缩；当前使用第二版项目格式，不读取第一版格式。项目文件本身没有加密，应按案件资料保管。
-- 网络能力限于离线抓包分析，不支持实时抓包、TCP 重组或 TLS 解密；TLS 当前仅做基础协议识别。
-- IOC 当前支持 IP、域名和 HTTP/HTTPS URL，不支持文件哈希、CIDR、通配符或联网情报查询；不扫描数据包的二进制载荷。
-- 本机日志自动加载适用于 Windows/Linux；macOS 可导入离线日志。采集结果受权限和日志留存影响。
-- 本地规则、IOC 和 AI 发现用于辅助核查，**不等于确认入侵**。应结合原始证据、实际影响和正常行为解释作出判断。
-- 当前为本地文件与手动保存模式，不包含多人协作、云同步或自动保存。
+- AI sends selected evidence only when explicitly enabled and **does not automatically redact it**. For PCAP, parsed summaries are sent by default; raw packets and payloads require an additional selection. `.eair` files do not store AI keys.
+- `.eair` is a self-contained project file managed with embedded SQLite and lossless evidence compression. The current project format is version 2 and cannot read version 1 files. Project files are not encrypted; handle them as case evidence.
+- Network features are limited to offline capture analysis. Live capture, TCP reassembly, and TLS decryption are not supported. TLS support currently provides basic protocol identification only.
+- IOCs currently support IP addresses, domains, and HTTP/HTTPS URLs. File hashes, CIDR ranges, wildcards, and online threat intelligence queries are not supported. Binary packet payloads are not scanned.
+- Loading common local logs is available on Windows/Linux. On macOS, import offline logs. Collected evidence depends on permissions and log retention.
+- Local rules, IOCs, and AI findings assist investigation and **do not confirm a compromise**. Assess them against original evidence, actual impact, and explanations based on normal behavior.
+- The tool uses local files and manual saving. It does not provide multi-user collaboration, cloud synchronization, or autosave.
 
-## 开发与构建
+## Development and builds
 
-工作区分为 CLI、GUI、共享应用层与分析核心，两个前端共用解析和分析能力：
+The workspace contains a CLI, a GUI, a shared application layer, and an analysis core. Both frontends share parsing and analysis capabilities:
 
 ```mermaid
 flowchart LR
@@ -179,20 +177,20 @@ flowchart LR
     APP --> CORE[analyzer-core]
 ```
 
-CLI/GUI 负责交互；app 负责分析编排、项目、会话、筛选、后台任务、配置与导出校验；core 负责解析、规则、AI 协议和报告编码。
+CLI/GUI handle interaction. The app layer handles analysis orchestration, projects, sessions, filters, background tasks, configuration, and export validation. The core handles parsing, rules, AI protocols, and report encoding.
 
-需要 Rust 1.95+ 与对应平台构建依赖。GUI 另需 Node.js 22.12+；Linux GUI 需要安装 GTK 3 / WebKitGTK 4.1 等开发依赖。
+Requires Rust 1.95+ and the build dependencies for your platform. The GUI also requires Node.js 22.12+. Linux GUI builds require development dependencies such as GTK 3 / WebKitGTK 4.1.
 
 ```sh
 # CLI
 cargo build --release --locked -p easy-analyzer
 
-# GUI：先构建前端资源，再运行桌面程序
+# GUI: build frontend assets first, then run the desktop application
 npm --prefix crates/analyzer-gui/frontend ci
 npm --prefix crates/analyzer-gui/frontend run build
 cargo run --locked -p analyzer-gui
 
-# 本地检查
+# Local checks
 cargo fmt --all -- --check
 cargo clippy --locked --workspace --all-targets -- -D warnings
 cargo test --locked --workspace
@@ -200,10 +198,10 @@ npm --prefix crates/analyzer-gui/frontend test
 npm --prefix crates/analyzer-gui/frontend run format:check
 ```
 
-macOS 打包入口为 `tools/package-macos.sh`（CLI）和 `scripts/package_gui_macos.sh`（GUI）；Windows 安装包入口为 `scripts/package_gui_windows.py`。打包脚本需要 Python 3.11+ 及对应平台工具链，产物位于 `dist/`。
+macOS packaging uses `tools/package-macos.sh` for the CLI and `scripts/package_gui_macos.sh` for the GUI. Windows installer packaging uses `scripts/package_gui_windows.py`. These scripts require Python 3.11+ and the corresponding platform toolchain, and write artifacts to `dist/`.
 
-GitHub 工作流负责平台构建、前端检查和打包校验。正式版本标签发布正式 Release，`vX.Y.Z-preview.N` 发布预览版；预览版不替换 Latest，普通源码更新不创建 Release。Rust 格式、Clippy 和工作区测试在推送前本地完成。
+GitHub workflows handle platform builds, frontend checks, and packaging validation. Stable version tags publish stable Releases; `vX.Y.Z-preview.N` tags publish previews. Previews do not replace Latest, and ordinary source updates do not create Releases. Rust formatting, Clippy, and workspace tests run locally before pushing code changes.
 
-## 开源协议
+## License
 
 [MIT License](LICENSE) · Copyright © 2026 Easy Analyzer contributors

@@ -116,17 +116,20 @@ const icons = {
   settings: Settings2,
 };
 const hints: Record<Screen, string> = {
-  projects: "每次应急响应独立保存，继续已有项目或新建项目",
-  commands: "查看与复制常用排查、取证命令",
-  ioc: "导入、粘贴或手动输入 IOC，在当前项目中查找待核查线索",
-  import: "汇集离线证据，开始本地分析",
-  overview: "从发现追溯证据，核查每一条线索",
-  logs: "完整集合查询 · 保留原始记录",
-  processes: "按快照来源建立关系，识别孤儿与循环",
-  network: "离线网络会话与数据包，保留完整会话统计",
-  ai: "主动选择证据范围，核查已校验的结果",
-  reports: "来源可追溯，导出保留完整证据",
-  settings: "配置按需保存，连接检查由你主动发起",
+  projects:
+    "Each incident response is saved independently; resume an existing project or create one",
+  commands: "View and copy common triage and forensics commands",
+  ioc: "Import, paste, or enter IOCs manually to find leads in the current project",
+  import: "Collect offline evidence and start local analysis",
+  overview: "Trace evidence from findings and verify each lead",
+  logs: "Full-collection queries · raw records preserved",
+  processes:
+    "Relations built from snapshot sources; identify orphans and cycles",
+  network: "Offline network sessions and packets with full session statistics",
+  ai: "Choose the evidence scope deliberately and review validated results",
+  reports: "Sources remain traceable; exports keep complete evidence",
+  settings:
+    "Configuration is saved on demand; connection checks run only when you start them",
 };
 const initialPreferences: Preferences = {
   dark: false,
@@ -164,12 +167,12 @@ const initialFilters = (saved?: Bootstrap["filters"]) =>
     ]),
   ) as Record<SessionScreen, Filters>;
 const statusText: Record<string, string> = {
-  running: "处理中",
-  cancelling: "正在取消，等待当前请求返回",
-  completed: "已完成",
-  partial: "部分完成",
-  cancelled: "已取消，结果不完整",
-  failed: "处理失败",
+  running: "In progress",
+  cancelling: "Cancelling; waiting for the current request to return",
+  completed: "Completed",
+  partial: "Partially completed",
+  cancelled: "Cancelled; results are incomplete",
+  failed: "Failed",
 };
 interface ScopeContext {
   screen: SessionScreen;
@@ -209,7 +212,7 @@ export function App() {
     [drawer, setDrawer] = useState(false),
     [back, setBack] = useState<Bookmark[]>([]),
     [error, setError] = useState<string | null>(null),
-    [notice, setNotice] = useState("就绪"),
+    [notice, setNotice] = useState("Ready"),
     [task, setTask] = useState<TaskMessage | null>(null),
     [request, setRequest] = useState(initialImport),
     [dragging, setDragging] = useState(false),
@@ -238,7 +241,7 @@ export function App() {
     [newOpen, setNewOpen] = useState(false),
     [closeOpen, setCloseOpen] = useState(false),
     [draft, setDraft] = useState<ConfigInput | null>(null),
-    [checkStatus, setCheckStatus] = useState("尚未检查"),
+    [checkStatus, setCheckStatus] = useState("Not checked yet"),
     [width, setWidth] = useState(window.innerWidth),
     [sourceOffset, setSourceOffset] = useState(0),
     [diagnosticOffset, setDiagnosticOffset] = useState(0),
@@ -315,7 +318,7 @@ export function App() {
           revision !== viewRevision.current ||
           value.session_id !== session.current
         )
-          return "会话或查询已更新，请重新应用查询";
+          return "Session or query changed; apply the query again";
         if (value.project)
           setBoot((v) => (v ? { ...v, project: value.project } : v));
         setViews((v) => ({ ...v, [next]: value }));
@@ -335,8 +338,8 @@ export function App() {
       } catch (e) {
         if (
           revision === viewRevision.current &&
-          !String(e).includes("已忽略") &&
-          !String(e).includes("已取消")
+          !String(e).includes("Ignored") &&
+          !String(e).includes("cancelled")
         )
           setError(String(e));
         return String(e);
@@ -362,7 +365,7 @@ export function App() {
     try {
       await api.preferences(value);
     } catch (e) {
-      setError(`偏好保存失败：${String(e)}`);
+      setError(`Failed to save preferences: ${String(e)}`);
     }
   };
   useEffect(() => {
@@ -393,12 +396,12 @@ export function App() {
           );
           setNotice(
             value.saved_paths.length
-              ? `已保存：${value.saved_paths.join("、")}`
+              ? `Saved: ${value.saved_paths.join(", ")}`
               : statusText[value.status] || value.status,
           );
           if (value.error) setError(value.error);
           if (value.kind === "config_check")
-            setCheckStatus(value.error ? "连接失败" : "连接正常");
+            setCheckStatus(value.error ? "Connection failed" : "Connection OK");
           const generation = lifecycle.current;
           const fresh = await api.initialize();
           if (disposed || generation !== lifecycle.current) return;
@@ -544,7 +547,7 @@ export function App() {
             } catch (e) {
               event.preventDefault();
               closing.current = false;
-              setError(`偏好保存失败：${String(e)}`);
+              setError(`Failed to save preferences: ${String(e)}`);
             }
           }
         });
@@ -561,7 +564,8 @@ export function App() {
             }),
           );
       } catch (e) {
-        if (!disposed) setError(`桌面接口初始化失败：${String(e)}`);
+        if (!disposed)
+          setError(`Desktop API initialization failed: ${String(e)}`);
       }
     };
     void initialize();
@@ -627,7 +631,7 @@ export function App() {
       // A new view revision cancels the previous native read and restores the
       // last valid selection, including a query that finished just before cancellation.
       void refresh("logs", previous, null, true);
-      setNotice("已取消日志查询，保留上一次有效范围");
+      setNotice("Log query cancelled; the last valid scope is kept");
     }
   };
   const editAiFilter = () => {
@@ -676,7 +680,7 @@ export function App() {
         revision !== viewRevision.current ||
         value.session_id !== session.current
       )
-        throw new Error("会话或视图已更新，请重新应用筛选");
+        throw new Error("Session or view changed; apply the filter again");
       scopeContext.current = {
         screen: draft.screen,
         filters: structuredClone(filter),
@@ -697,19 +701,19 @@ export function App() {
     if (busy || boot?.platform !== "windows") return;
     setElevationBusy(true);
     setError(null);
-    setNotice("等待 UAC 授权");
+    setNotice("Waiting for UAC");
     try {
       const result = await api.elevate();
       setNotice(
         result === "launched"
-          ? "管理员窗口已启动；原窗口和证据保留，请在新窗口开始本机采集"
+          ? "Administrator window launched; the original window and evidence remain. Start local collection in the new window"
           : result === "cancelled"
-            ? "已取消 UAC 授权，仍使用当前窗口"
-            : "当前窗口已具有管理员权限",
+            ? "UAC cancelled; still using the current window"
+            : "The current window already has administrator privileges",
       );
     } catch (error) {
-      setNotice("提权未完成，当前会话保留");
-      setError(`无法启动管理员窗口：${String(error)}`);
+      setNotice("Elevation did not complete; the current session stays");
+      setError(`Could not launch the administrator window: ${String(error)}`);
     } finally {
       setElevationBusy(false);
     }
@@ -993,18 +997,22 @@ export function App() {
     }
   };
   const submitProject = async (info: ProjectInfo) => {
-    if (busy) throw new Error("请等待当前操作完成");
+    if (busy) throw new Error("Wait for the current operation to finish");
     setProjectSubmitting(true);
     try {
       if (editing) {
         const sid = session.current;
         if (sid === null || projectRef.current?.info.id !== info.id)
-          throw new Error("当前项目已切换，请重新打开编辑窗口");
+          throw new Error(
+            "The current project changed; reopen the editor and try again",
+          );
         const project = await api.editProject(sid, info);
         if (session.current !== sid)
-          throw new Error("当前项目已切换，请重新打开编辑窗口");
+          throw new Error(
+            "The current project changed; reopen the editor and try again",
+          );
         setBoot((v) => (v ? { ...v, project } : v));
-        setNotice("项目资料已修改，请保存项目");
+        setNotice("Project details changed; save the project");
       } else {
         lifecycle.current++;
         const job = await api.createProject(info);
@@ -1056,7 +1064,7 @@ export function App() {
       scopeContext.current = null;
       setRequest((v) => ({ ...v, paths: [] }));
       setScreen("projects");
-      setNotice("就绪");
+      setNotice("Ready");
       setNewOpen(false);
     } catch (e) {
       setError(String(e));
@@ -1080,7 +1088,7 @@ export function App() {
       setOverwrite(false);
       if (!ended.current.has(job.task_id)) setTask(job);
     } catch (e) {
-      if (String(e).includes("已存在")) setOverwrite(true);
+      if (String(e).includes("already exists")) setOverwrite(true);
       else setError(String(e));
     }
   };
@@ -1107,13 +1115,13 @@ export function App() {
   const findingsColumns: ColumnDef<Finding>[] = [
     {
       id: "risk",
-      header: "风险",
+      header: "Risk",
       size: 72,
       cell: ({ row }) => <Risk finding={row.original} />,
     },
     {
       accessorKey: "title",
-      header: "发现",
+      header: "Finding",
       cell: ({ row }) => (
         <span className="truncate table-primary" title={row.original.title}>
           {row.original.title}
@@ -1122,17 +1130,17 @@ export function App() {
     },
     {
       id: "origin",
-      header: "来源",
+      header: "Origin",
       size: 78,
       cell: ({ row }) => (
         <span className="origin-badge">
-          {row.original.origin.startsWith("local:") ? "本地规则" : "AI"}
+          {row.original.origin.startsWith("local:") ? "Local rules" : "AI"}
         </span>
       ),
     },
     {
       id: "evidence",
-      header: "证据",
+      header: "Evidence",
       size: 53,
       cell: ({ row }) => (
         <span className="mono table-muted">
@@ -1142,7 +1150,7 @@ export function App() {
     },
     {
       id: "confidence",
-      header: "置信度",
+      header: "Confidence",
       size: 64,
       cell: ({ row }) => (
         <span className="table-muted">
@@ -1156,7 +1164,7 @@ export function App() {
       ? [
           {
             id: "event_id",
-            header: "级别 / 状态 / 事件",
+            header: "Level / status / event",
             size: 105,
             cell: ({ row }) => (
               <span className="mono table-muted">
@@ -1169,7 +1177,7 @@ export function App() {
   const recordsColumns: ColumnDef<RecordSummary>[] = [
     {
       id: "time",
-      header: screen === "processes" ? "PID / PPID" : "时间",
+      header: screen === "processes" ? "PID / PPID" : "Time",
       size: screen === "processes" ? 85 : screen === "logs" ? 160 : 115,
       cell: ({ row }) => {
         const r = row.original;
@@ -1184,7 +1192,7 @@ export function App() {
               ? `${r.data.fields.pid} / ${r.data.fields.parent_pid ?? "—"}`
               : screen === "logs"
                 ? displayRecordLogTime(r)
-                : r.timestamp?.slice(5, 19).replace("T", " ") || "未知"}
+                : r.timestamp?.slice(5, 19).replace("T", " ") || "Unknown"}
           </span>
         );
       },
@@ -1192,7 +1200,7 @@ export function App() {
     ...logEventColumn,
     {
       id: "source",
-      header: screen === "processes" ? "快照来源" : "来源",
+      header: screen === "processes" ? "Snapshot source" : "Source",
       size: 99,
       cell: ({ row }) => (
         <span
@@ -1210,21 +1218,21 @@ export function App() {
       id: "kind",
       header:
         screen === "processes"
-          ? "关系"
+          ? "Relations"
           : screen === "network"
-            ? "协议"
-            : "事件类型",
+            ? "Protocol"
+            : "Event type",
       size: screen === "network" ? 56 : 87,
       cell: ({ row }) => {
         const r = row.original;
         const node = data?.process_rows.find((n) => n.record_id === r.id);
         return r.data.kind === "process" ? (
           <span className="relation-tags">
-            {node?.orphan && <span className="tag-warning">孤儿</span>}
-            {node?.cyclic && <span className="tag-warning">循环</span>}
-            {node?.context && <span>上下文</span>}
+            {node?.orphan && <span className="tag-warning">Orphan</span>}
+            {node?.cyclic && <span className="tag-warning">Cycle</span>}
+            {node?.context && <span>Context</span>}
             {!node?.orphan && !node?.cyclic && !node?.context && (
-              <span className="table-muted">正常</span>
+              <span className="table-muted">Normal</span>
             )}
           </span>
         ) : (
@@ -1247,10 +1255,10 @@ export function App() {
       id: "summary",
       header:
         screen === "processes"
-          ? "进程名称"
+          ? "Process name"
           : screen === "network"
-            ? "端点 / 摘要"
-            : "关键字段",
+            ? "Endpoints / summary"
+            : "Key fields",
       cell: ({ row }) => {
         const r = row.original;
         const node = data?.process_rows.find((n) => n.record_id === r.id);
@@ -1266,7 +1274,7 @@ export function App() {
             {node?.has_children && (
               <button
                 className="tree-toggle"
-                aria-label={`${active.collapsed.includes(r.id) ? "展开" : "收起"} ${r.data.kind === "process" ? r.data.fields.name : ""}`}
+                aria-label={`${active.collapsed.includes(r.id) ? "Expand" : "Collapse"} ${r.data.kind === "process" ? r.data.fields.name : ""}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   changeFilters({
@@ -1290,7 +1298,7 @@ export function App() {
               {r.data.kind === "process"
                 ? r.data.fields.name
                 : r.data.kind === "log" && r.status !== "parsed"
-                  ? "点击查看原始记录"
+                  ? "Click to view the raw record"
                   : r.summary}
             </span>
           </div>
@@ -1299,7 +1307,7 @@ export function App() {
     },
     {
       id: "status",
-      header: screen === "network" ? "字节" : "状态",
+      header: screen === "network" ? "Bytes" : "Status",
       size: 66,
       cell: ({ row }) =>
         row.original.data.kind === "packet" ? (
@@ -1316,7 +1324,7 @@ export function App() {
   const flowColumns: ColumnDef<Flow>[] = [
     {
       accessorKey: "endpoint_a",
-      header: "端点 A",
+      header: "Endpoint A",
       cell: ({ row }) => (
         <span
           className="mono truncate table-primary"
@@ -1328,17 +1336,17 @@ export function App() {
     },
     {
       accessorKey: "endpoint_b",
-      header: "端点 B",
+      header: "Endpoint B",
       cell: ({ row }) => (
         <span className="mono truncate" title={row.original.endpoint_b}>
           {row.original.endpoint_b}
         </span>
       ),
     },
-    { accessorKey: "protocol", header: "协议", size: 64 },
+    { accessorKey: "protocol", header: "Protocol", size: 64 },
     {
       id: "packets",
-      header: "命中 / 全部包",
+      header: "Matched / total packets",
       size: 110,
       cell: ({ row }) => (
         <span className="mono">
@@ -1348,7 +1356,7 @@ export function App() {
     },
     {
       id: "bytes",
-      header: "字节",
+      header: "Bytes",
       size: 74,
       cell: ({ row }) => (
         <span className="mono table-muted">{bytes(row.original.bytes)}</span>
@@ -1358,7 +1366,7 @@ export function App() {
   const sourceColumns: ColumnDef<Source>[] = [
     {
       accessorKey: "path",
-      header: "来源路径",
+      header: "Source path",
       cell: ({ row }) => (
         <span className="truncate mono" title={row.original.path}>
           {basename(row.original.path)}
@@ -1367,7 +1375,7 @@ export function App() {
     },
     {
       accessorKey: "format",
-      header: "格式",
+      header: "Format",
       size: 76,
       cell: ({ row }) => (
         <span className="small-badge">{row.original.format}</span>
@@ -1375,7 +1383,7 @@ export function App() {
     },
     {
       id: "size",
-      header: "大小",
+      header: "Size",
       size: 80,
       cell: ({ row }) => (
         <span className="mono table-muted">{bytes(row.original.bytes)}</span>
@@ -1395,11 +1403,11 @@ export function App() {
   const riskControls = (
     <div className="filter-row">
       <Select
-        label="风险级别"
+        label="Risk level"
         value={active.severity || ""}
         onChange={(v) => changeFilters({ severity: (v as Severity) || null })}
         options={[
-          { value: "", label: "全部风险" },
+          { value: "", label: "All risks" },
           ...Object.entries(severityLabel).map(([value, label]) => ({
             value,
             label,
@@ -1408,18 +1416,18 @@ export function App() {
       />
       {screen !== "ai" && (
         <Select
-          label="发现来源"
+          label="Finding origin"
           value={active.origin}
           onChange={(v) => changeFilters({ origin: v || "all" })}
           options={[
-            { value: "all", label: "全部发现" },
-            { value: "local", label: "本地规则" },
-            { value: "ai", label: "AI 发现" },
+            { value: "all", label: "All findings" },
+            { value: "local", label: "Local rules" },
+            { value: "ai", label: "AI findings" },
           ]}
         />
       )}
       <span className="filter-count">
-        {number(data?.findings?.total || 0)} 项发现
+        {number(data?.findings?.total || 0)} findings
       </span>
     </div>
   );
@@ -1438,9 +1446,9 @@ export function App() {
       empty={
         hasSession
           ? screen === "ai"
-            ? "当前风险筛选下没有 AI 发现；可选择证据并运行 AI 分析"
-            : "当前筛选没有发现"
-          : "导入证据后展示分析结果"
+            ? "No AI findings for the current risk filter; select evidence and run AI analysis"
+            : "No findings for the current filter"
+          : "Analysis results appear after evidence is imported"
       }
       limit={active.limit}
       onPage={(offset) => changeFilters({ offset }, false)}
@@ -1470,7 +1478,9 @@ export function App() {
                     setDetail((v) =>
                       v?.record.id === record ? { ...v, note: text } : v,
                     );
-                    setNotice("证据备注已写入，保存项目后持久保留");
+                    setNotice(
+                      "Evidence note written; persist it by saving the project",
+                    );
                   }
                 } catch (e) {
                   setError(String(e));
@@ -1521,22 +1531,22 @@ export function App() {
             </span>
             <button
               className="toolbar-project"
-              title={boot?.project ? "编辑项目资料" : undefined}
+              title={boot?.project ? "Edit project details" : undefined}
               disabled={busy || !boot?.project}
               onClick={editProject}
             >
               {boot?.project
                 ? `${boot.project.info.name} · ${boot.project.info.client}${boot.project.dirty ? " *" : ""}`
                 : hasSession
-                  ? "证据分析会话"
-                  : "新项目"}
+                  ? "Evidence analysis session"
+                  : "New project"}
             </button>
             <ChevronRight size={12} />
             <span className="toolbar-current">{titles[screen]}</span>
             {hasSession && (
               <span className="session-badge">
                 <span className="status-dot" />
-                {boot?.project ? "应急响应项目" : "本地会话"}
+                {boot?.project ? "Incident response project" : "Local session"}
               </span>
             )}
           </div>
@@ -1545,21 +1555,21 @@ export function App() {
               <>
                 <Button variant="ghost" disabled={busy} onClick={editProject}>
                   <Pencil size={14} />
-                  编辑资料
+                  Edit details
                 </Button>
                 <Button
                   variant="ghost"
                   disabled={busy}
                   onClick={() => void saveProject()}
                 >
-                  保存{boot.project.dirty ? " *" : ""}
+                  Save{boot.project.dirty ? " *" : ""}
                 </Button>
                 <Button
                   variant="ghost"
                   disabled={busy}
                   onClick={() => void saveProject(true)}
                 >
-                  另存为
+                  Save as
                 </Button>
               </>
             )}
@@ -1575,7 +1585,7 @@ export function App() {
               }
             >
               <Plus size={14} />
-              <span>新建项目</span>
+              <span>New project</span>
             </Button>
             <Button
               variant="ghost"
@@ -1583,7 +1593,7 @@ export function App() {
               onClick={() => navigate("ai")}
             >
               <Sparkles size={14} />
-              <span>AI 分析</span>
+              <span>AI analysis</span>
             </Button>
             <Button
               variant="secondary"
@@ -1594,7 +1604,7 @@ export function App() {
               }}
             >
               <Download size={14} />
-              <span>导出报告</span>
+              <span>Export report</span>
             </Button>
           </div>
           {boot?.platform !== "macos" && (
@@ -1602,7 +1612,7 @@ export function App() {
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="最小化"
+                aria-label="Minimize"
                 onClick={() => void getCurrentWebviewWindow().minimize()}
               >
                 <Minus size={13} />
@@ -1610,7 +1620,7 @@ export function App() {
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="最大化"
+                aria-label="Maximize"
                 onClick={() => void getCurrentWebviewWindow().toggleMaximize()}
               >
                 <Square size={11} />
@@ -1618,11 +1628,13 @@ export function App() {
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="关闭窗口"
+                aria-label="Close window"
                 onClick={() =>
                   void getCurrentWebviewWindow()
                     .close()
-                    .catch((e) => setError(`关闭窗口失败：${String(e)}`))
+                    .catch((e) =>
+                      setError(`Failed to close the window: ${String(e)}`),
+                    )
                 }
               >
                 <X size={14} />
@@ -1633,7 +1645,7 @@ export function App() {
         <div className="workbench">
           <aside className="sidebar">
             <div className="sidebar-navigation">
-              <div className="sidebar-section">工作台</div>
+              <div className="sidebar-section">Workbench</div>
               {screens
                 .filter((s) => s !== "settings")
                 .map((s) => {
@@ -1641,10 +1653,12 @@ export function App() {
                   return (
                     <div key={s}>
                       {s === "import" && (
-                        <div className="sidebar-section">证据</div>
+                        <div className="sidebar-section">Evidence</div>
                       )}
                       {s === "processes" && (
-                        <div className="sidebar-section">分析与输出</div>
+                        <div className="sidebar-section">
+                          Analysis and output
+                        </div>
                       )}
                       <Tooltip text={titles[s]}>
                         <button
@@ -1673,34 +1687,46 @@ export function App() {
                     <Files size={14} />
                   </span>
                   <div>
-                    <strong>{number(overview?.records || 0)} 条证据</strong>
+                    <strong>
+                      {number(overview?.records || 0)} evidence records
+                    </strong>
                     <span>
-                      {overview?.sources || 0} 个来源 ·{" "}
-                      {boot?.project ? ".eair 项目" : "临时会话"}
+                      {overview?.sources || 0} sources ·{" "}
+                      {boot?.project ? ".eair project" : "temporary session"}
                     </span>
                   </div>
                 </div>
               )}
-              <Tooltip text="设置">
+              <Tooltip text="Settings">
                 <button
                   className={`nav-item ${screen === "settings" ? "active" : ""}`}
                   onClick={() => navigate("settings")}
-                  aria-label="设置"
+                  aria-label="Settings"
                 >
                   <Settings2 size={16} />
-                  <span>设置</span>
+                  <span>Settings</span>
                 </button>
               </Tooltip>
-              <Tooltip text={prefs.dark ? "切换浅色主题" : "切换深色主题"}>
+              <Tooltip
+                text={
+                  prefs.dark
+                    ? "Switch to the light theme"
+                    : "Switch to the dark theme"
+                }
+              >
                 <button
                   className="nav-item theme-toggle"
-                  aria-label={prefs.dark ? "切换浅色主题" : "切换深色主题"}
+                  aria-label={
+                    prefs.dark
+                      ? "Switch to the light theme"
+                      : "Switch to the dark theme"
+                  }
                   onClick={() =>
                     void updatePreferences({ ...prefs, dark: !prefs.dark })
                   }
                 >
                   {prefs.dark ? <Sun size={16} /> : <Moon size={16} />}
-                  <span>{prefs.dark ? "浅色主题" : "深色主题"}</span>
+                  <span>{prefs.dark ? "Light theme" : "Dark theme"}</span>
                 </button>
               </Tooltip>
               <div className="sidebar-version">
@@ -1716,7 +1742,7 @@ export function App() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label="返回原视图"
+                      aria-label="Back to previous view"
                       onClick={() => void goBack()}
                     >
                       <ArrowLeft size={16} />
@@ -1731,16 +1757,16 @@ export function App() {
                 <Tooltip
                   text={
                     narrow
-                      ? "打开证据详情"
+                      ? "Open evidence details"
                       : prefs.inspector
-                        ? "收起详情"
-                        : "展开详情"
+                        ? "Collapse details"
+                        : "Expand details"
                   }
                 >
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="切换详情"
+                    aria-label="Toggle details"
                     onClick={() =>
                       narrow
                         ? setDrawer(true)
@@ -1759,7 +1785,10 @@ export function App() {
               <div className="error-banner">
                 <CircleAlert size={14} />
                 <span>{error}</span>
-                <button aria-label="关闭错误" onClick={() => setError(null)}>
+                <button
+                  aria-label="Dismiss error"
+                  onClick={() => setError(null)}
+                >
                   <X size={13} />
                 </button>
               </div>
@@ -1792,7 +1821,7 @@ export function App() {
                     onError={setError}
                   />
                 ) : (
-                  <p>请先新建或打开应急响应项目。</p>
+                  <p>Create or open an incident response project first.</p>
                 ))}
               {screen === "import" && (
                 <ImportView
@@ -1818,27 +1847,27 @@ export function App() {
                   <div className="statistics">
                     {[
                       {
-                        label: "证据来源",
+                        label: "Evidence sources",
                         value: overview?.sources || 0,
-                        sub: "独立来源",
+                        sub: "distinct sources",
                         icon: Files,
                       },
                       {
-                        label: "证据记录",
+                        label: "Evidence records",
                         value: overview?.records || 0,
-                        sub: "完整证据集合",
+                        sub: "complete evidence set",
                         icon: FileText,
                       },
                       {
-                        label: "本地发现",
+                        label: "Local findings",
                         value: overview?.local_findings || 0,
-                        sub: "规则分析",
+                        sub: "rule analysis",
                         icon: ShieldCheck,
                       },
                       {
-                        label: "AI 发现",
+                        label: "AI findings",
                         value: overview?.ai_findings || 0,
-                        sub: "已通过校验",
+                        sub: "validated",
                         icon: Sparkles,
                       },
                     ].map((item) => (
@@ -1853,8 +1882,8 @@ export function App() {
                     ))}
                   </div>
                   <div className="table-section-heading">
-                    <span>待核查发现</span>
-                    <small>按风险级别排列</small>
+                    <span>Findings to verify</span>
+                    <small>ordered by risk level</small>
                   </div>
                   {riskControls}
                   {findingsTable}
@@ -1873,8 +1902,8 @@ export function App() {
                     <div className="search-input">
                       <Search size={15} />
                       <input
-                        aria-label="查询证据"
-                        placeholder="搜索关键词或输入正则表达式…"
+                        aria-label="Query evidence"
+                        placeholder="Search keywords or a regular expression…"
                         value={active.text}
                         onCompositionStart={() => {
                           composingQuery.current = true;
@@ -1908,7 +1937,7 @@ export function App() {
                       type="submit"
                       disabled={!hasSession || loading}
                     >
-                      查询
+                      Query
                     </Button>
                     <Button
                       variant="ghost"
@@ -1920,7 +1949,7 @@ export function App() {
                         void refresh(screen, f);
                       }}
                     >
-                      重置
+                      Reset
                     </Button>
                   </form>
                   <div className="filter-row evidence-filters">
@@ -1933,65 +1962,77 @@ export function App() {
                           onClick={() => setLogQueryOpen(true)}
                         >
                           <SlidersHorizontal size={14} />
-                          多维查询
+                          Multi-dim query
                           {logQueryCount(active.log_query) > 0
                             ? ` (${logQueryCount(active.log_query)})`
                             : ""}
                         </Button>
                         <Select
-                          label="日志排列顺序"
+                          label="Log order"
                           value={active.order}
                           disabled={loading || busy}
                           onChange={(order) =>
                             changeFilters({ order: order as RecordOrder })
                           }
                           options={[
-                            { value: "original_asc", label: "原始正序" },
-                            { value: "original_desc", label: "原始倒序" },
-                            { value: "time_asc", label: "时间正序（旧→新）" },
-                            { value: "time_desc", label: "时间倒序（新→旧）" },
+                            {
+                              value: "original_asc",
+                              label: "Original order (forward)",
+                            },
+                            {
+                              value: "original_desc",
+                              label: "Original order (reverse)",
+                            },
+                            {
+                              value: "time_asc",
+                              label: "Time ascending (old → new)",
+                            },
+                            {
+                              value: "time_desc",
+                              label: "Time descending (new → old)",
+                            },
                           ]}
                         />
                       </>
                     )}
                     <Checkbox
-                      label="正则"
+                      label="Regex"
                       checked={active.regex}
                       onChange={(regex) => changeFilters({ regex })}
                     />
                     <Checkbox
-                      label="仅本地可疑"
+                      label="Local suspicious only"
                       checked={active.suspicious}
                       onChange={(suspicious) => changeFilters({ suspicious })}
                     />
                     <span className="filter-separator" />
                     <Select
-                      label="证据来源"
+                      label="Evidence source"
                       value={active.source || ""}
                       onChange={(source) =>
                         changeFilters({ source: source || null })
                       }
                       options={[
-                        { value: "", label: "全部来源" },
+                        { value: "", label: "All sources" },
                         ...(data?.sources.items || []).map((s) => ({
                           value: s.id,
                           label: basename(s.path),
                         })),
                         ...(active.source &&
                         !data?.sources.items.some((s) => s.id === active.source)
-                          ? [{ value: active.source, label: "指定来源" }]
+                          ? [{ value: active.source, label: "Selected source" }]
                           : []),
                       ]}
                     />
                     {screen === "logs" && (
                       <Select
-                        label="事件类型 / 日志类别"
+                        label="Event type / log category"
                         value={active.category || ""}
                         onChange={(category) =>
                           changeFilters({ category: category || null })
                         }
                         options={[
-                          { value: "", label: "全部事件类型" },
+                          { value: "", label: "All event types" },
                           ...(overview?.categories || []).map((value) => ({
                             value,
                             label: logTypeLabel(value),
@@ -2000,7 +2041,7 @@ export function App() {
                       />
                     )}
                     <Select
-                      label="解析状态"
+                      label="Parse status"
                       value={active.status || ""}
                       onChange={(status) =>
                         changeFilters({
@@ -2008,7 +2049,7 @@ export function App() {
                         })
                       }
                       options={[
-                        { value: "", label: "全部状态" },
+                        { value: "", label: "All statuses" },
                         ...Object.entries(statusLabel).map(
                           ([value, label]) => ({ value, label }),
                         ),
@@ -2016,13 +2057,13 @@ export function App() {
                     />
                     {screen === "network" && (
                       <Select
-                        label="协议"
+                        label="Protocol"
                         value={active.protocol || ""}
                         onChange={(protocol) =>
                           changeFilters({ protocol: protocol || null })
                         }
                         options={[
-                          { value: "", label: "全部协议" },
+                          { value: "", label: "All protocols" },
                           ...(overview?.protocols || []).map((value) => ({
                             value,
                             label: value,
@@ -2033,7 +2074,7 @@ export function App() {
                   </div>
                   {data && data.sources.total > 100 && (
                     <Pagination
-                      label="筛选来源"
+                      label="Filtered sources"
                       offset={data.sources.offset}
                       total={data.sources.total}
                       limit={100}
@@ -2050,11 +2091,13 @@ export function App() {
                         value={active.tree ? "tree" : "list"}
                         onChange={(v) => changeFilters({ tree: v === "tree" })}
                         items={[
-                          { value: "tree", label: "进程树" },
-                          { value: "list", label: "列表" },
+                          { value: "tree", label: "Process tree" },
+                          { value: "list", label: "List" },
                         ]}
                       />
-                      <span>快照来源独立分组 · 祖先仅作为上下文</span>
+                      <span>
+                        Snapshots group separately · ancestors shown as context
+                      </span>
                     </div>
                   )}
                   {screen === "network" && (
@@ -2068,14 +2111,14 @@ export function App() {
                           })
                         }
                         items={[
-                          { value: "flows", label: "网络会话" },
-                          { value: "packets", label: "数据包" },
+                          { value: "flows", label: "Network sessions" },
+                          { value: "packets", label: "Packets" },
                         ]}
                       />
                       <span>
                         {active.flow !== null
-                          ? `会话 #${active.flow + 1} · 筛选交集`
-                          : "会话统计为完整包数与字节数"}
+                          ? `Session #${active.flow + 1} · filter intersection`
+                          : "Session statistics cover all packets and bytes"}
                       </span>
                       {active.flow !== null && (
                         <Button
@@ -2083,7 +2126,7 @@ export function App() {
                           size="sm"
                           onClick={() => changeFilters({ flow: null })}
                         >
-                          全部包
+                          All packets
                         </Button>
                       )}
                     </div>
@@ -2091,7 +2134,8 @@ export function App() {
                   {data?.outside && (
                     <div className="focus-banner">
                       <ArrowUpRight size={13} />
-                      已定位筛选外证据，返回后恢复原视图。
+                      Evidence outside the current filter is focused; the
+                      original view returns when you go back.
                     </div>
                   )}
                   {screen === "network" && !active.packets ? (
@@ -2120,8 +2164,8 @@ export function App() {
                       limit={active.limit}
                       empty={
                         hasSession
-                          ? "没有匹配的证据，请调整筛选"
-                          : "先导入证据，随后在这里查询和核查"
+                          ? "No evidence matches; adjust the filters"
+                          : "Import evidence first, then query and verify it here"
                       }
                     />
                   )}
@@ -2131,12 +2175,15 @@ export function App() {
                 <>
                   <div className="ai-controls">
                     <div className="ai-scope-row">
-                      <span className="section-label-text">证据范围</span>
+                      <span className="section-label-text">Evidence scope</span>
                       <div className="segmented">
                         {[
-                          { value: "suspicious", label: "本地可疑项" },
-                          { value: "matches", label: "当前筛选" },
-                          { value: "all", label: "全部证据" },
+                          {
+                            value: "suspicious",
+                            label: "Local suspicious items",
+                          },
+                          { value: "matches", label: "Current filter" },
+                          { value: "all", label: "All evidence" },
                         ].map((s) => (
                           <button
                             key={s.value}
@@ -2159,7 +2206,7 @@ export function App() {
                         onClick={editAiFilter}
                       >
                         <SlidersHorizontal size={13} />
-                        编辑筛选
+                        Edit filter
                       </Button>
                     </div>
                     <div className="ai-summary">
@@ -2169,14 +2216,14 @@ export function App() {
                         </span>
                         <div>
                           <strong>
-                            {number(aiCount)} <small>条证据</small>
+                            {number(aiCount)} <small>records</small>
                           </strong>
                           <p title={scope === "matches" ? selection.label : ""}>
                             {scope === "matches"
                               ? selection.label
                               : scope === "suspicious"
-                                ? "本地规则命中的完整证据集合"
-                                : "当前会话的全部证据"}
+                                ? "Evidence matched by local rules"
+                                : "All evidence in the current session"}
                           </p>
                         </div>
                         <Button
@@ -2191,23 +2238,27 @@ export function App() {
                           onClick={() => void startAI()}
                         >
                           <Sparkles size={14} />
-                          运行 AI 分析
+                          Run AI analysis
                         </Button>
                       </div>
                       <div className="ai-service">
                         <span>
-                          模型{" "}
-                          <strong>{boot?.config.model || "尚未配置"}</strong>
+                          Model{" "}
+                          <strong>
+                            {boot?.config.model || "Not configured"}
+                          </strong>
                         </span>
                         <span
                           className="truncate"
                           title={boot?.config.base_url}
                         >
-                          服务{" "}
-                          <strong>{boot?.config.base_url || "尚未配置"}</strong>
+                          Service{" "}
+                          <strong>
+                            {boot?.config.base_url || "Not configured"}
+                          </strong>
                         </span>
                         <button onClick={() => navigate("settings")}>
-                          配置
+                          Configure
                           <ArrowUpRight size={11} />
                         </button>
                       </div>
@@ -2216,47 +2267,49 @@ export function App() {
                       <div className="ai-plan-preview" aria-live="polite">
                         {currentAiPreview ? (
                           <>
-                            <strong>发送预览</strong>
+                            <strong>Send preview</strong>
                             <details className="ai-budget-details">
-                              <summary>预算详情</summary>
+                              <summary>Budget details</summary>
                               <div>
                                 <span>
                                   {number(
                                     currentAiPreview.plan.selected_records,
                                   )}{" "}
-                                  条 · 证据约{" "}
+                                  records · evidence ≈{" "}
                                   {number(
                                     currentAiPreview.plan.evidence_tokens,
                                   )}{" "}
-                                  token · 提示与预留约{" "}
+                                  tokens · prompt + reserve ≈{" "}
                                   {number(currentAiPreview.plan.prompt_tokens)}{" "}
                                   token
                                 </span>
                                 <small>
-                                  本地保守估算，非服务方精确计数；不会自动发送。
+                                  Conservative local estimate, not the
+                                  provider's exact count; nothing is sent
+                                  automatically.
                                   {currentAiPreview.plan.context_tokens === null
-                                    ? "可在设置中启用上下文预算规划。"
-                                    : "已预留输出上限和 20% 安全余量。"}
+                                    ? "Context budget planning can be enabled in settings."
+                                    : "Output cap and a 20% safety margin are reserved."}
                                 </small>
                               </div>
                             </details>
                             <span>
                               {currentAiPreview.plan.evidence_batches === 1
-                                ? "单次完整发送"
-                                : `分为 ${number(currentAiPreview.plan.evidence_batches)} 个证据批次`}
+                                ? "Single full send"
+                                : `Split into ${number(currentAiPreview.plan.evidence_batches)} evidence batches`}
                               {currentAiPreview.plan.summary_planned
-                                ? "，完成后跨批汇总（按需要分轮）"
+                                ? ", followed by cross-batch synthesis (in rounds as needed)"
                                 : ""}
                               {currentAiPreview.plan.input_budget_tokens !==
                               null
-                                ? ` · 每次输入预算 ${number(currentAiPreview.plan.input_budget_tokens)} token`
-                                : " · 字节兼容模式"}
+                                ? ` · ${number(currentAiPreview.plan.input_budget_tokens)} token input budget per request`
+                                : " · byte-compatible mode"}
                             </span>
                           </>
                         ) : currentAiPreviewError ? (
                           <>
                             <span className="warning">
-                              预览失败：{currentAiPreviewError}
+                              Preview failed: {currentAiPreviewError}
                             </span>
                             <Button
                               size="sm"
@@ -2264,43 +2317,46 @@ export function App() {
                               disabled={busy}
                               onClick={() => setAiPreviewAttempt((v) => v + 1)}
                             >
-                              重新计算
+                              Recalculate
                             </Button>
                           </>
                         ) : (
                           <span>
                             {busy
-                              ? "等待当前任务完成后更新发送预览"
-                              : "正在本地计算发送范围与预算…"}
+                              ? "The send preview updates once the current task finishes"
+                              : "Computing the send scope and budget locally…"}
                           </span>
                         )}
                       </div>
                     )}
                     <div className="ai-privacy">
                       <Checkbox
-                        label="本次包含原始包与载荷"
+                        label="Include raw packets and payloads this run"
                         checked={payload}
                         disabled={busy}
                         onChange={setPayload}
                       />
                       <span>
                         <CircleAlert size={12} />
-                        证据不会自动脱敏
+                        Evidence is not redacted automatically
                       </span>
                     </div>
                     {!boot?.config_loaded && (
                       <div className="muted text-small">
-                        请先在设置页加载或保存配置。
+                        Load or save a configuration on the settings page first.
                       </div>
                     )}
                     {data?.runs.items[0]?.local_summary && (
                       <AiLocalSummary text={data.runs.items[0].local_summary} />
                     )}
                   </div>
-                  <section className="ai-results" aria-label="AI 有效发现">
+                  <section
+                    className="ai-results"
+                    aria-label="Validated AI findings"
+                  >
                     <div className="ai-results-heading">
-                      <span title="仅展示通过回复与证据校验的 AI 结果">
-                        AI 有效发现
+                      <span title="Only AI results that passed reply and evidence validation are shown">
+                        Validated AI findings
                       </span>
                       {riskControls}
                       <Button
@@ -2310,7 +2366,7 @@ export function App() {
                         onClick={() => setAiHistoryOpen(true)}
                       >
                         <History size={13} />
-                        运行历史 {data?.runs.total || 0}
+                        Run history {data?.runs.total || 0}
                       </Button>
                     </div>
                     {findingsTable}
@@ -2325,15 +2381,15 @@ export function App() {
                         <Files size={20} />
                       </span>
                       <div>
-                        <strong>完整证据报告</strong>
+                        <strong>Full evidence report</strong>
                         <p>
-                          {overview?.sources || 0} 个来源 ·{" "}
-                          {number(overview?.records || 0)} 条证据 ·{" "}
+                          {overview?.sources || 0} sources ·{" "}
+                          {number(overview?.records || 0)} evidence records ·{" "}
                           {number(
                             (overview?.local_findings || 0) +
                               (overview?.ai_findings || 0),
                           )}{" "}
-                          项发现
+                          findings
                         </p>
                       </div>
                     </div>
@@ -2343,12 +2399,12 @@ export function App() {
                       onClick={() => setExportOpen(true)}
                     >
                       <Download size={14} />
-                      导出报告
+                      Export report
                     </Button>
                   </div>
                   <div className="table-section-heading">
-                    <span>证据来源</span>
-                    <small>原始文件哈希 · SHA-256</small>
+                    <span>Evidence sources</span>
+                    <small>original file hashes · SHA-256</small>
                   </div>
                   <div className="sources-table">
                     <DataTable
@@ -2364,11 +2420,11 @@ export function App() {
                           inspector: true,
                         });
                       }}
-                      empty="尚未导入来源"
+                      empty="No sources imported yet"
                     />
                   </div>
                   <Pagination
-                    label="来源"
+                    label="Sources"
                     offset={data?.sources.offset || 0}
                     total={data?.sources.total || 0}
                     limit={100}
@@ -2380,9 +2436,9 @@ export function App() {
                   />
                   <div className="table-section-heading">
                     <span>
-                      诊断 <small>{data?.diagnostics.total || 0}</small>
+                      Diagnostics <small>{data?.diagnostics.total || 0}</small>
                     </span>
-                    <small>保留未完成范围与解析问题</small>
+                    <small>unfinished scopes and parse issues are kept</small>
                   </div>
                   <div className="diagnostic-list" key={diagnosticOffset}>
                     {data?.diagnostics.items.map((d, i) => (
@@ -2400,12 +2456,12 @@ export function App() {
                     {!data?.diagnostics.items.length && (
                       <div className="diagnostic-empty">
                         <ShieldCheck size={17} />
-                        没有诊断
+                        No diagnostics
                       </div>
                     )}
                   </div>
                   <Pagination
-                    label="诊断"
+                    label="Diagnostics"
                     offset={data?.diagnostics.offset || 0}
                     total={data?.diagnostics.total || 0}
                     limit={50}
@@ -2431,7 +2487,7 @@ export function App() {
                   onPick={() => void pick("config")}
                   onApply={() =>
                     void applyConfig()
-                      .then(() => setNotice("设置已应用，尚未保存"))
+                      .then(() => setNotice("Settings applied; not saved yet"))
                       .catch((e) => setError(String(e)))
                   }
                   onSave={() => void configOperation("save")}
@@ -2481,7 +2537,7 @@ export function App() {
                     </span>
                   )}
                 <button onClick={() => void api.cancel(task.task_id)}>
-                  取消
+                  Cancel
                 </button>
               </>
             ) : (
@@ -2498,10 +2554,10 @@ export function App() {
                   <>
                     <span className="status-separator" />
                     <span className="status-muted">
-                      {number(overview?.records || 0)} 条证据
+                      {number(overview?.records || 0)} evidence records
                     </span>
                     <button onClick={() => navigate("reports")}>
-                      {lastView?.diagnostics.total || 0} 条诊断
+                      {lastView?.diagnostics.total || 0} diagnostics
                     </button>
                   </>
                 )}
@@ -2509,54 +2565,54 @@ export function App() {
             )}
           </div>
           <span className="status-muted">
-            本地工作台
+            Local workbench
             <span className="status-separator" />
-            {boot?.project ? "手动保存项目" : "临时会话"}
+            {boot?.project ? "manual project saves" : "temporary session"}
           </span>
         </footer>
         <Dialog
           drawer
           open={screen !== "commands" && narrow && drawer}
           onOpenChange={setDrawer}
-          title="证据详情"
+          title="Evidence details"
         >
           {inspector}
         </Dialog>
         <Dialog
           open={exportOpen}
           onOpenChange={setExportOpen}
-          title="导出报告"
-          description="保留完整证据与发现，不受当前筛选或分页裁剪。"
+          title="Export report"
+          description="Keeps the complete evidence and findings, unaffected by the current filter or pagination."
         >
           <div className="export-options">
             <Checkbox
-              label="HTML 报告"
+              label="HTML report"
               checked={exportHtml}
               onChange={setExportHtml}
             />
             <Checkbox
-              label="JSON 数据"
+              label="JSON data"
               checked={exportJson}
               onChange={setExportJson}
             />
           </div>
           <label className="form-field">
-            导出路径
+            Export path
             <div className="input-action">
               <input
                 className="input mono"
-                aria-label="导出路径"
+                aria-label="Export path"
                 value={exportPath}
                 onChange={(e) => {
                   setExportPath(e.target.value);
                   setOverwrite(false);
                 }}
-                placeholder="选择报告保存位置"
+                placeholder="Choose where to save the report"
               />
               <Button
                 variant="outline"
                 size="icon"
-                aria-label="选择导出路径"
+                aria-label="Pick export path"
                 onClick={() => void pick("export")}
               >
                 <FolderOpen size={15} />
@@ -2565,12 +2621,13 @@ export function App() {
           </label>
           {overwrite && (
             <div className="warning-note">
-              同名报告已存在。再次点击将覆盖报告；证据与配置路径仍受保护。
+              A report with this name already exists. Clicking again will
+              overwrite it; evidence and configuration paths stay protected.
             </div>
           )}
           <div className="dialog-actions">
             <Button variant="ghost" onClick={() => setExportOpen(false)}>
-              取消
+              Cancel
             </Button>
             <Button
               disabled={
@@ -2582,15 +2639,17 @@ export function App() {
               onClick={() => void doExport()}
             >
               <Download size={14} />
-              {overwrite ? "确认覆盖并导出" : "导出完整报告"}
+              {overwrite
+                ? "Confirm overwrite and export"
+                : "Export full report"}
             </Button>
           </div>
         </Dialog>
         <Dialog
           open={aiHistoryOpen}
           onOpenChange={setAiHistoryOpen}
-          title="AI 运行历史"
-          description="查看批次、有效回复及未完成范围。"
+          title="AI run history"
+          description="View batches, valid replies, and unfinished scopes."
           className="ai-history-dialog"
         >
           {hasSession && (
@@ -2641,8 +2700,8 @@ export function App() {
         <Dialog
           open={dirtyOpen}
           onOpenChange={setDirtyOpen}
-          title="项目有未保存的修改"
-          description="保存当前项目后再切换，或放弃本次未保存的修改。原项目文件保留。"
+          title="Project has unsaved changes"
+          description="Save the current project before switching, or discard these unsaved changes. The original project file is kept."
         >
           <div className="dialog-actions">
             <Button
@@ -2652,7 +2711,7 @@ export function App() {
                 setDirtyOpen(false);
               }}
             >
-              返回项目
+              Back to project
             </Button>
             <Button
               variant="secondary"
@@ -2663,7 +2722,7 @@ export function App() {
                 action?.();
               }}
             >
-              放弃修改并继续
+              Discard and continue
             </Button>
             <Button
               onClick={() =>
@@ -2675,32 +2734,32 @@ export function App() {
                 })
               }
             >
-              保存并继续
+              Save and continue
             </Button>
           </div>
         </Dialog>
         <Dialog
           open={newOpen}
           onOpenChange={setNewOpen}
-          title="新建分析"
-          description="当前会话仅保存在内存中。建议先导出需要保留的报告。"
+          title="New analysis"
+          description="The current session only lives in memory. Export any report you want to keep first."
         >
           <div className="dialog-actions">
             <Button variant="ghost" onClick={() => setNewOpen(false)}>
-              返回当前会话
+              Back to current session
             </Button>
-            <Button onClick={() => void reset()}>新建空会话</Button>
+            <Button onClick={() => void reset()}>New empty session</Button>
           </div>
         </Dialog>
         <Dialog
           open={closeOpen}
           onOpenChange={setCloseOpen}
-          title="任务仍在运行"
-          description="取消会保留有效结果；已发送的请求需要等待返回或超时。"
+          title="Task still running"
+          description="Cancelling keeps valid results; sent requests must return or time out."
         >
           <div className="dialog-actions">
             <Button variant="ghost" onClick={() => setCloseOpen(false)}>
-              继续等待
+              Keep waiting
             </Button>
             <Button
               onClick={() => {
@@ -2708,7 +2767,7 @@ export function App() {
                 setCloseOpen(false);
               }}
             >
-              取消任务并保留结果
+              Cancel task and keep results
             </Button>
           </div>
         </Dialog>

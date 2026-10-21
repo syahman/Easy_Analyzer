@@ -7,7 +7,7 @@ fn ctx() -> ExecutionContext {
     ExecutionContext::default()
 }
 fn create() -> AnalysisSession {
-    ProjectService::create(ProjectInfo::new("合成响应 <script>", "合成客户甲")).unwrap()
+    ProjectService::create(ProjectInfo::new("Synthetic response <script>", "Synthetic client A")).unwrap()
 }
 fn append(session: &AnalysisSession, label: &str, text: &str) {
     ProjectService::append(
@@ -32,19 +32,19 @@ fn edited_metadata_survives_save_and_reopen_without_changing_evidence() {
     let session = create();
     append(&session, "metadata-test", "visit child.example.com\n");
     let record = session.page(None, 0, 1).unwrap().items[0].id.clone();
-    ProjectService::note(&session, &record, "原有备注", &ctx()).unwrap();
-    IocService::add_value(&session, "example.com", None, "原有 IOC", &ctx()).unwrap();
+    ProjectService::note(&session, &record, "Existing note", &ctx()).unwrap();
+    IocService::add_value(&session, "example.com", None, "Existing IOC", &ctx()).unwrap();
     IocService::scan(&session, true, &ctx()).unwrap();
     let hits = IocService::matches(&session, 0, 100).unwrap().total;
     let original = ProjectService::status(&session).unwrap().info;
     let mut info = original.clone();
-    info.name = "编辑后的响应".into();
-    info.client = "编辑后的客户".into();
+    info.name = "Edited response".into();
+    info.client = "Edited client".into();
     info.response_start = "2026-10-13T09:00:00+08:00".into();
     info.response_end = Some("2026-10-14T18:00:00+08:00".into());
-    info.location = "合成现场".into();
-    info.responders = "合成服务人员".into();
-    info.description = "更新后的项目说明".into();
+    info.location = "Synthetic site".into();
+    info.responders = "Synthetic responders".into();
+    info.description = "Updated project description".into();
     ProjectService::edit(&session, info.clone(), &ctx()).unwrap();
     assert!(ProjectService::status(&session).unwrap().dirty);
     let dir = tempfile::tempdir().unwrap();
@@ -69,14 +69,14 @@ fn edited_metadata_survives_save_and_reopen_without_changing_evidence() {
         ProjectService::read_note(&reopened, &record)
             .unwrap()
             .as_deref(),
-        Some("原有备注")
+        Some("Existing note")
     );
     assert_eq!(IocService::matches(&reopened, 0, 100).unwrap().total, hits);
     let catalog = ProjectCatalog::open(&dir.path().join("catalog")).unwrap();
     catalog.register(&reopened).unwrap();
     let entries = catalog
         .list(&ProjectSearch {
-            text: "编辑后的客户".into(),
+            text: "Edited client".into(),
             ..Default::default()
         })
         .unwrap();
@@ -119,7 +119,7 @@ fn identity_time_validation_and_catalog_relocation() {
     catalog.register(&a).unwrap();
     let entries = catalog
         .list(&ProjectSearch {
-            text: "客户甲".into(),
+            text: "Client A".into(),
             from: Some("2026-10-03".into()),
             until: Some("2026-10-03".into()),
             ..Default::default()
@@ -145,11 +145,11 @@ fn catalog_removal_preserves_project_files_session_evidence_and_ioc() {
     let catalog_root = dir.path().join("catalog");
     let catalog = ProjectCatalog::open(&catalog_root).unwrap();
     let a = create();
-    let b = ProjectService::create(ProjectInfo::new("另一响应", "合成客户乙")).unwrap();
+    let b = ProjectService::create(ProjectInfo::new("Another incident", "Synthetic client B")).unwrap();
     append(&a, "host-a", "visit child.example.com");
     let record = a.page(None, 0, 1).unwrap().items[0].id.clone();
-    ProjectService::note(&a, &record, "保留的证据备注", &ctx()).unwrap();
-    IocService::add_value(&a, "example.com", None, "保留的 IOC 说明", &ctx()).unwrap();
+    ProjectService::note(&a, &record, "Retained evidence note", &ctx()).unwrap();
+    IocService::add_value(&a, "example.com", None, "Retained IOC note", &ctx()).unwrap();
     IocService::scan(&a, true, &ctx()).unwrap();
     let hits = IocService::matches(&a, 0, 100).unwrap().total;
     assert!(hits > 0);
@@ -203,11 +203,11 @@ fn catalog_removal_preserves_project_files_session_evidence_and_ioc() {
         ProjectService::read_note(&reopened, &record)
             .unwrap()
             .as_deref(),
-        Some("保留的证据备注")
+        Some("Retained evidence note")
     );
     assert_eq!(
         IocService::indicators(&reopened, 0, 100).unwrap().items[0].note,
-        "保留的 IOC 说明"
+        "Retained IOC note"
     );
     assert_eq!(IocService::matches(&reopened, 0, 100).unwrap().total, hits);
     catalog.register(&reopened).unwrap();
@@ -259,12 +259,12 @@ fn append_dedup_notes_ioc_and_recovery_without_originals() {
     assert_eq!(session.overview(&ctx()).unwrap().records, count);
     assert!(!ProjectService::status(&session).unwrap().dirty);
     let id = session.page(None, 0, 1).unwrap().items[0].id.clone();
-    ProjectService::note(&session, &id, "已关联客户业务记录", &ctx()).unwrap();
+    ProjectService::note(&session, &id, "Linked client business record", &ctx()).unwrap();
     IocService::add_text(
         &session,
         "example.com\ninvalid/IOC\n2001:db8::1",
         false,
-        "粘贴",
+        "paste",
         &ctx(),
     )
     .unwrap();
@@ -290,7 +290,7 @@ fn append_dedup_notes_ioc_and_recovery_without_originals() {
     );
     assert_eq!(
         ProjectService::read_note(&session, &id).unwrap().as_deref(),
-        Some("已关联客户业务记录")
+        Some("Linked client business record")
     );
     let p = dir.path().join("project.eair");
     ProjectService::save(&session, &p, Path::new("config.toml"), false, &ctx()).unwrap();
@@ -300,7 +300,7 @@ fn append_dedup_notes_ioc_and_recovery_without_originals() {
         ProjectService::read_note(&reopened, &id)
             .unwrap()
             .as_deref(),
-        Some("已关联客户业务记录")
+        Some("Linked client business record")
     );
     assert_eq!(IocService::matches(&reopened, 0, 100).unwrap().total, hits);
     assert!(reopened.overview(&ctx()).unwrap().records > count);
@@ -310,32 +310,32 @@ fn append_dedup_notes_ioc_and_recovery_without_originals() {
 
 #[test]
 fn ioc_databases_remain_project_scoped_after_save_and_reopen() {
-    let a = ProjectService::create(ProjectInfo::new("响应甲", "合成客户甲")).unwrap();
-    let b = ProjectService::create(ProjectInfo::new("响应乙", "合成客户乙")).unwrap();
+    let a = ProjectService::create(ProjectInfo::new("Incident A", "Synthetic client A")).unwrap();
+    let b = ProjectService::create(ProjectInfo::new("Incident B", "Synthetic client B")).unwrap();
     let evidence = "visit shared.example.com\nvisit child.shared.example.com\nvisit alpha.example.net\nvisit beta.example.net";
     for session in [&a, &b] {
         append(session, "same-host", evidence);
         assert_eq!(IocService::indicators(session, 0, 100).unwrap().total, 0);
         assert!(IocService::status(session).unwrap().run.is_none());
     }
-    let shared_a = IocService::add_value(&a, "shared.example.com", None, "甲的说明", &ctx())
+    let shared_a = IocService::add_value(&a, "shared.example.com", None, "Note A", &ctx())
         .unwrap()
         .indicators[0]
         .id
         .clone();
-    let shared_b = IocService::add_value(&b, "SHARED.example.com", None, "乙的说明", &ctx())
+    let shared_b = IocService::add_value(&b, "SHARED.example.com", None, "Note B", &ctx())
         .unwrap()
         .indicators[0]
         .id
         .clone();
     // Equal normalized IOC IDs must still refer to independent project rows.
     assert_eq!(shared_a, shared_b);
-    let unique_a = IocService::add_value(&a, "alpha.example.net", None, "仅甲", &ctx())
+    let unique_a = IocService::add_value(&a, "alpha.example.net", None, "A only", &ctx())
         .unwrap()
         .indicators[0]
         .id
         .clone();
-    IocService::add_value(&b, "beta.example.net", None, "仅乙", &ctx()).unwrap();
+    IocService::add_value(&b, "beta.example.net", None, "B only", &ctx()).unwrap();
     IocService::scan(&a, true, &ctx()).unwrap();
     IocService::scan(&b, false, &ctx()).unwrap();
 
@@ -347,19 +347,19 @@ fn ioc_databases_remain_project_scoped_after_save_and_reopen() {
         })
     };
     let unchanged_b = snapshot(&b);
-    IocService::edit_note(&a, &shared_a, "甲修改后的说明", &ctx()).unwrap();
+    IocService::edit_note(&a, &shared_a, "Note A updated", &ctx()).unwrap();
     assert_eq!(snapshot(&b), unchanged_b);
     assert!(
-        IocService::edit_note(&b, &unique_a, "不得写入乙", &ctx())
+        IocService::edit_note(&b, &unique_a, "must not write into B", &ctx())
             .unwrap_err()
             .to_string()
-            .contains("不属于当前项目")
+            .contains("does not belong to the current project")
     );
     assert_eq!(snapshot(&b), unchanged_b);
 
     for (session, unique, shared_note, subdomains) in [
-        (&a, "alpha.example.net", "甲修改后的说明", true),
-        (&b, "beta.example.net", "乙的说明", false),
+        (&a, "alpha.example.net", "Note A updated", true),
+        (&b, "beta.example.net", "Note B", false),
     ] {
         let indicators = IocService::indicators(session, 0, 100).unwrap();
         assert_eq!(indicators.total, 2);
@@ -533,7 +533,7 @@ fn project_scope_ai_freeze_streaming_reports_and_filters() {
             .err()
             .unwrap()
             .to_string()
-            .contains("预览")
+            .contains("preview")
     );
     let mut json = Vec::new();
     ExportPlan {
@@ -560,9 +560,9 @@ fn project_scope_ai_freeze_streaming_reports_and_filters() {
     .write_primary(&a, &mut html, &ctx())
     .unwrap();
     let html = String::from_utf8(html).unwrap();
-    assert!(html.contains("合成客户甲"));
+    assert!(html.contains("Synthetic client A"));
     assert!(html.contains("&lt;script&gt;"));
-    assert!(!html.contains("合成响应 <script>"));
+    assert!(!html.contains("Synthetic response <script>"));
     ProjectService::save_view_state(&a, &serde_json::json!({"logs":{"text":"first"}})).unwrap();
     assert!(ProjectService::view_state(&a).unwrap().is_some());
     let query = QueryOptions {
@@ -767,9 +767,9 @@ fn ai_summary_lookup_is_bounded_cached_and_keeps_latest_message() {
     let c = rusqlite::Connection::open(&path).unwrap();
     for (source, position, message) in [
         ("parser", "line:1", "unrelated"),
-        ("AI 本地整理", "ai-run:1", "old"),
-        ("AI 本地整理", "ai-run:2", "second"),
-        ("AI 本地整理", "ai-run:1", "latest"),
+        ("AI local recap", "ai-run:1", "old"),
+        ("AI local recap", "ai-run:2", "second"),
+        ("AI local recap", "ai-run:1", "latest"),
     ] {
         let diagnostic = serde_json::to_string(&core::Diagnostic {
             source: source.into(),
@@ -826,16 +826,16 @@ fn compressed_project_preserves_unicode_records_queries_notes_and_reports() {
     let lines = (0..300)
         .map(|i| {
             format!(
-                "证据编号 {i} {} example.com",
-                "相同业务日志，保持原文；".repeat(40)
+                "Evidence ID {i} {} example.com",
+                "Same business log, kept verbatim; ".repeat(40)
             )
         })
         .collect::<Vec<_>>()
         .join("\n");
     append(&session, "compressed-unicode", &lines);
     let id = session.page(None, 0, 1).unwrap().items[0].id.clone();
-    ProjectService::note(&session, &id, "备注完整保留", &ctx()).unwrap();
-    IocService::add_value(&session, "example.com", None, "域名 IOC", &ctx()).unwrap();
+    ProjectService::note(&session, &id, "Note retained in full", &ctx()).unwrap();
+    IocService::add_value(&session, "example.com", None, "Domain IOC", &ctx()).unwrap();
     IocService::scan(&session, true, &ctx()).unwrap();
     let snapshot = |session: &AnalysisSession| {
         let mut report = Vec::new();
@@ -871,14 +871,14 @@ fn compressed_project_preserves_unicode_records_queries_notes_and_reports() {
     assert_eq!(before, snapshot(&reopened));
     assert_eq!(
         ProjectService::read_note(&reopened, &id).unwrap().unwrap(),
-        "备注完整保留"
+        "Note retained in full"
     );
     assert_eq!(IocService::matches(&reopened, 0, 100).unwrap().total, 300);
     assert_eq!(
         reopened
             .query(
                 &QueryOptions {
-                    expression: Some("证据编号 299".into()),
+                    expression: Some("Evidence ID 299".into()),
                     ..Default::default()
                 },
                 &ctx()
@@ -911,6 +911,6 @@ fn previous_project_format_is_rejected_before_loading_evidence() {
             .err()
             .unwrap()
             .to_string()
-            .contains("不支持该项目文件版本")
+            .contains("This project file version is not supported")
     );
 }

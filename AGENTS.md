@@ -1,22 +1,22 @@
-# 项目约定
+# Project Conventions
 
-## 架构
+## Architecture
 
-- 依赖方向为 `analyzer-cli / 未来 analyzer-gui → analyzer-app → analyzer-core`。CLI 不直接依赖 core；共享模型通过 app 的导出接口访问。
-- 分析编排、范围选择、会话、配置保存与导出校验放在 app；解析器、规则、AI 协议和报告编码放在 core。前端负责参数/控件、标准输入输出及进度展示。
-- app/core 不依赖 CLI 或 GUI 框架、不打印终端；新增耗时循环接入执行上下文。任务取消保留有效证据、有效 AI 结果和未完成诊断。
-- 保持报告 schema 和已有 core 公开入口兼容；GUI 使用会话分页与后台任务，不复制整套 CLI 流程。
+- Dependencies flow `analyzer-cli / future analyzer-gui → analyzer-app → analyzer-core`. The CLI does not depend on core directly; shared models are accessed through the app's exported interfaces.
+- Analysis orchestration, scope selection, sessions, configuration saving, and export validation live in the app; parsers, rules, the AI protocol, and report encoding live in core. Frontends handle parameters/controls, standard input/output, and progress display.
+- app/core do not depend on CLI or GUI frameworks and never print to the terminal; newly added long-running loops must hook into the execution context. Task cancellation keeps valid evidence, valid AI results, and unfinished diagnostics.
+- Keep the report schema and the existing core public entry points compatible; the GUI uses session pagination and background tasks and does not duplicate the full CLI flow.
 
-## Git 与发布
+## Git and releases
 
-- 日常修改只提交源码；用户要求同步 GitHub 时推送分支。`codex/incident-projects-ioc` 推送自动运行 CI 并上传构建附件，不创建 Release，也不手动启动发布 Actions。
-- 只有用户明确要求打包成 tag 或发布预览安装包时，才创建并推送 `vX.Y.Z` 或 `vX.Y.Z-preview.N` 标签。版本不明确时先确认；标签必须指向已提交的发布源码，并与 `Cargo.toml`、`Cargo.lock` 中的项目版本一致，更新 `CHANGELOG.md`。
-- 标签推送后，由 `.github/workflows/ci.yml` 自动构建发布：正式 tag 发布正式 Releases，预览 tag 发布 Pre-release 且不标记 Latest；等待 Actions 结果后报告成功或失败。不要在普通更新中发布 Release。
-- Releases 附件仅包含 Windows x64、Linux x64、macOS ARM64 各自的 CLI 与 GUI，共六个附件及 `SHA256SUMS`，其中 macOS GUI 为未压缩的 DMG，内含 `Easy Analyzer.app`（`easy-analyzer-gui-macos-arm64.dmg`），其余为独立程序；文件名明确包含 `-cli-` / `-gui-`。不发布 macOS Intel 版，不上传文档、样本、配置或其他压缩包。
-- 预览版保持六个附件及 `SHA256SUMS`，Windows GUI 改为轻量 NSIS 安装包 `easy-analyzer-gui-windows-x64-setup.exe`，缺少 WebView2 时联网下载；正式版附件规则不变。
-- 不覆盖已发布版本；修改后用新的版本标签发布。
+- Daily changes commit source code only; push branches when the user asks to sync GitHub. Pushes to `codex/incident-projects-ioc` automatically run CI and upload build artifacts, do not create a Release, and do not manually start release Actions.
+- Only when the user explicitly asks to package a version tag or publish a preview installer should `vX.Y.Z` or `vX.Y.Z-preview.N` tags be created and pushed. Confirm the version first when it is unclear; a tag must point to committed release source, match the project version in `Cargo.toml` and `Cargo.lock`, and `CHANGELOG.md` must be updated.
+- After a tag is pushed, `.github/workflows/ci.yml` builds and publishes automatically: stable tags publish stable Releases, preview tags publish Pre-releases without marking Latest; report success or failure after waiting for the Actions result. Do not publish a Release during ordinary updates.
+- Release assets contain only the CLI and GUI for Windows x64, Linux x64, and macOS ARM64 — six attachments plus `SHA256SUMS`; the macOS GUI is an uncompressed DMG containing `Easy Analyzer.app` (`easy-analyzer-gui-macos-arm64.dmg`), and the rest are standalone programs; filenames explicitly include `-cli-` / `-gui-`. Do not publish a macOS Intel build, and do not upload documentation, samples, configuration, or other archives.
+- Previews keep the six attachments and `SHA256SUMS`, with the Windows GUI replaced by the lightweight NSIS installer `easy-analyzer-gui-windows-x64-setup.exe`, which downloads WebView2 online when missing; stable-release asset rules are unchanged.
+- Do not overwrite published versions; after changes, publish with a new version tag.
 
-## 本地文件
+## Local files
 
-- `dist/` 保留最新程序，不按版本新建目录；更新程序时保留用户的 `config.toml`、报告和案件文件。
-- 密钥、本地配置、真实日志、案件数据和构建产物不得纳入 Git。
+- `dist/` keeps the latest programs only, without per-version directories; when updating programs, keep the user's `config.toml`, reports, and case files.
+- Secrets, local configuration, real logs, case data, and build artifacts must not be committed to Git.

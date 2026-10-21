@@ -29,23 +29,29 @@ it("defaults the project name to the client and saves a blank name using the cli
       onSave={save}
     />,
   );
-  fireEvent.change(screen.getByLabelText("客户单位 *"), {
-    target: { value: "合成客户甲" },
+  fireEvent.change(screen.getByLabelText("Client organization *"), {
+    target: { value: "Synthetic client A" },
   });
-  expect(screen.getByLabelText("项目名称")).toHaveValue("合成客户甲");
-  fireEvent.change(screen.getByLabelText("客户单位 *"), {
-    target: { value: "合成客户乙" },
+  expect(screen.getByLabelText("Project name")).toHaveValue(
+    "Synthetic client A",
+  );
+  fireEvent.change(screen.getByLabelText("Client organization *"), {
+    target: { value: "Synthetic client B" },
   });
-  expect(screen.getByLabelText("项目名称")).toHaveValue("合成客户乙");
-  fireEvent.change(screen.getByLabelText("项目名称"), {
+  expect(screen.getByLabelText("Project name")).toHaveValue(
+    "Synthetic client B",
+  );
+  fireEvent.change(screen.getByLabelText("Project name"), {
     target: { value: " " },
   });
-  fireEvent.click(screen.getByRole("button", { name: "确认项目资料" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Confirm project details" }),
+  );
   await waitFor(() =>
     expect(save).toHaveBeenCalledWith(
       expect.objectContaining({
-        name: "合成客户乙",
-        client: "合成客户乙",
+        name: "Synthetic client B",
+        client: "Synthetic client B",
       }),
     ),
   );
@@ -59,29 +65,39 @@ it("preserves custom and existing project names when the client changes", () => 
       onSave={vi.fn()}
     />,
   );
-  fireEvent.change(screen.getByLabelText("项目名称"), {
-    target: { value: "自定义响应名称" },
+  fireEvent.change(screen.getByLabelText("Project name"), {
+    target: { value: "Custom response name" },
   });
-  fireEvent.change(screen.getByLabelText("客户单位 *"), {
-    target: { value: "合成客户甲" },
+  fireEvent.change(screen.getByLabelText("Client organization *"), {
+    target: { value: "Synthetic client A" },
   });
-  expect(screen.getByLabelText("项目名称")).toHaveValue("自定义响应名称");
+  expect(screen.getByLabelText("Project name")).toHaveValue(
+    "Custom response name",
+  );
   unmount();
   render(
     <ProjectEditor
-      info={{ ...newProject(), name: "合成客户甲", client: "合成客户甲" }}
+      info={{
+        ...newProject(),
+        name: "Synthetic client A",
+        client: "Synthetic client A",
+      }}
       busy={false}
       onClose={() => {}}
       onSave={vi.fn()}
     />,
   );
-  fireEvent.change(screen.getByLabelText("客户单位 *"), {
-    target: { value: "合成客户乙" },
+  fireEvent.change(screen.getByLabelText("Client organization *"), {
+    target: { value: "Synthetic client B" },
   });
-  expect(screen.getByLabelText("项目名称")).toHaveValue("合成客户甲");
+  expect(screen.getByLabelText("Project name")).toHaveValue(
+    "Synthetic client A",
+  );
 });
 it("validates response times and preserves metadata until accepted", async () => {
-  const save = vi.fn().mockRejectedValue("响应时间必须含时区");
+  const save = vi
+    .fn()
+    .mockRejectedValue("Response time must include a time zone");
   render(
     <ProjectEditor
       info={newProject()}
@@ -90,24 +106,30 @@ it("validates response times and preserves metadata until accepted", async () =>
       onSave={save}
     />,
   );
-  fireEvent.change(screen.getByLabelText("项目名称"), {
-    target: { value: "合成项目" },
+  fireEvent.change(screen.getByLabelText("Project name"), {
+    target: { value: "Synthetic project" },
   });
-  fireEvent.change(screen.getByLabelText("客户单位 *"), {
-    target: { value: "合成客户" },
+  fireEvent.change(screen.getByLabelText("Client organization *"), {
+    target: { value: "Synthetic client" },
   });
-  fireEvent.change(screen.getByLabelText("响应结束时间（含时区）"), {
+  fireEvent.change(screen.getByLabelText("Response end (with time zone)"), {
     target: { value: "2000-01-01T00:00:00Z" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "确认项目资料" }));
-  await screen.findByText("响应结束时间不能早于开始时间");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Confirm project details" }),
+  );
+  await screen.findByText("Response end must not be earlier than the start");
   expect(save).not.toHaveBeenCalled();
-  fireEvent.change(screen.getByLabelText("响应结束时间（含时区）"), {
+  fireEvent.change(screen.getByLabelText("Response end (with time zone)"), {
     target: { value: "" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "确认项目资料" }));
-  await screen.findByText("响应时间必须含时区");
-  expect(screen.getByLabelText("项目名称")).toHaveValue("合成项目");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Confirm project details" }),
+  );
+  await screen.findByText("Response time must include a time zone");
+  expect(screen.getByLabelText("Project name")).toHaveValue(
+    "Synthetic project",
+  );
 });
 it("searches project metadata and clearly identifies missing files", async () => {
   mock.invoke.mockResolvedValue({
@@ -115,7 +137,11 @@ it("searches project metadata and clearly identifies missing files", async () =>
     total: 1,
     items: [
       {
-        info: { ...newProject(), name: "合成响应", client: "合成客户" },
+        info: {
+          ...newProject(),
+          name: "Synthetic response",
+          client: "Synthetic client",
+        },
         path: "/tmp/moved.eair",
         last_opened: "2026-10-05T10:00:00Z",
         missing: true,
@@ -131,24 +157,30 @@ it("searches project metadata and clearly identifies missing files", async () =>
       onError={() => {}}
     />,
   );
-  await screen.findByText("项目文件缺失，请重新打开移动后的文件");
-  expect(screen.getByRole("button", { name: "继续项目" })).toBeDisabled();
-  fireEvent.change(screen.getByLabelText("项目搜索"), {
-    target: { value: "合成" },
+  await screen.findByText(
+    "Project file missing; reopen it from its new location",
+  );
+  expect(screen.getByRole("button", { name: "Resume project" })).toBeDisabled();
+  fireEvent.change(screen.getByLabelText("Project search"), {
+    target: { value: "Synthetic" },
   });
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith(
       "project_list_page",
       expect.objectContaining({
-        search: expect.objectContaining({ text: "合成" }),
+        search: expect.objectContaining({ text: "Synthetic" }),
       }),
     ),
   );
 });
 
 it.each([
-  ["响应开始时间（含时区） *", "2026-10-14T09:00:00", "响应开始时间"],
-  ["响应结束时间（含时区）", "invalid", "响应结束时间"],
+  [
+    "Response start (with time zone) *",
+    "2026-10-14T09:00:00",
+    "Response start",
+  ],
+  ["Response end (with time zone)", "invalid", "Response end"],
 ])(
   "rejects invalid editing time in %s before applying",
   async (label, value, error) => {
@@ -156,14 +188,18 @@ it.each([
     render(
       <ProjectEditor
         mode="edit"
-        info={{ ...newProject(), name: "合成响应", client: "合成客户" }}
+        info={{
+          ...newProject(),
+          name: "Synthetic response",
+          client: "Synthetic client",
+        }}
         busy={false}
         onClose={() => {}}
         onSave={save}
       />,
     );
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
-    fireEvent.click(screen.getByRole("button", { name: "应用修改" }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply changes" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(error);
     expect(save).not.toHaveBeenCalled();
   },
@@ -181,29 +217,39 @@ it("blocks duplicate editing requests and preserves the draft on failure", async
   render(
     <ProjectEditor
       mode="edit"
-      info={{ ...newProject(), name: "合成响应", client: "合成客户" }}
+      info={{
+        ...newProject(),
+        name: "Synthetic response",
+        client: "Synthetic client",
+      }}
       busy={false}
       onClose={close}
       onSave={save}
     />,
   );
-  const name = screen.getByLabelText("项目名称");
-  fireEvent.change(name, { target: { value: "更新后的响应" } });
+  const name = screen.getByLabelText("Project name");
+  fireEvent.change(name, { target: { value: "Updated response" } });
   fireEvent.submit(name.closest("form")!);
   fireEvent.submit(name.closest("form")!);
   expect(save).toHaveBeenCalledTimes(1);
   expect(name).toBeDisabled();
-  expect(screen.getByRole("button", { name: "取消" })).toBeDisabled();
-  fireEvent.click(screen.getByRole("button", { name: "关闭" }));
+  expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "Close" }));
   expect(close).not.toHaveBeenCalled();
-  await act(async () => reject("合成应用失败"));
-  expect(await screen.findByRole("alert")).toHaveTextContent("合成应用失败");
-  expect(name).toHaveValue("更新后的响应");
-  expect(screen.getByRole("button", { name: "应用修改" })).toBeEnabled();
+  await act(async () => reject("synthetic apply failure"));
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "synthetic apply failure",
+  );
+  expect(name).toHaveValue("Updated response");
+  expect(screen.getByRole("button", { name: "Apply changes" })).toBeEnabled();
 });
 
 it("cancels project edits without modifying the original metadata", () => {
-  const info = { ...newProject(), name: "原项目", client: "原客户" };
+  const info = {
+    ...newProject(),
+    name: "Original project",
+    client: "Original client",
+  };
   const close = vi.fn();
   const save = vi.fn();
   render(
@@ -215,17 +261,17 @@ it("cancels project edits without modifying the original metadata", () => {
       onSave={save}
     />,
   );
-  fireEvent.change(screen.getByLabelText("项目名称"), {
-    target: { value: "取消的修改" },
+  fireEvent.change(screen.getByLabelText("Project name"), {
+    target: { value: "Cancelled edit" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "取消" }));
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
   expect(close).toHaveBeenCalledTimes(1);
   expect(save).not.toHaveBeenCalled();
-  expect(info.name).toBe("原项目");
+  expect(info.name).toBe("Original project");
 });
 function projectEntry(name: string): ProjectEntry {
   return {
-    info: { ...newProject(), name, client: `${name}客户` },
+    info: { ...newProject(), name, client: `${name} client` },
     path: `/tmp/${name}.eair`,
     last_opened: "2026-10-07T09:00:00+08:00",
     missing: false,
@@ -239,8 +285,8 @@ const homeProps = {
   onError: () => {},
 };
 it("requires confirmation to remove only the selected catalog entry and refreshes the list", async () => {
-  const a = projectEntry("合成响应甲");
-  const b = projectEntry("合成响应乙");
+  const a = projectEntry("Synthetic response A");
+  const b = projectEntry("Synthetic response B");
   let entries = [a, b];
   mock.invoke.mockImplementation(async (command: string) => {
     if (command === "project_list_page")
@@ -249,19 +295,23 @@ it("requires confirmation to remove only the selected catalog entry and refreshe
   });
   render(<ProjectHome {...homeProps} />);
   const button = await screen.findByRole("button", {
-    name: "从列表移除 合成响应甲",
+    name: "Remove Synthetic response A from the list",
   });
   fireEvent.click(button);
-  const dialog = screen.getByRole("dialog", { name: "从列表移除项目" });
-  expect(within(dialog).getByText(/保留 .eair 文件、证据和 IOC/)).toBeVisible();
+  const dialog = screen.getByRole("dialog", {
+    name: "Remove project from the list",
+  });
+  expect(
+    within(dialog).getByText(/the \.eair file, evidence, and IOCs are kept/),
+  ).toBeVisible();
   expect(within(dialog).getByText(a.path)).toBeVisible();
-  fireEvent.click(within(dialog).getByRole("button", { name: "取消" }));
+  fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
   expect(
     mock.invoke.mock.calls.some(([command]) => command === "project_remove"),
   ).toBe(false);
   expect(screen.getByText(a.info.name)).toBeVisible();
   fireEvent.click(button);
-  fireEvent.click(screen.getByRole("button", { name: "确认移除" }));
+  fireEvent.click(screen.getByRole("button", { name: "Confirm removal" }));
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith("project_remove", {
       id: a.info.id,
@@ -273,7 +323,7 @@ it("requires confirmation to remove only the selected catalog entry and refreshe
   );
   expect(screen.getByText(b.info.name)).toBeVisible();
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  await screen.findByText("按最近打开排序 · 1 个项目");
+  await screen.findByText("Sorted by last opened · 1 project");
   await waitFor(() =>
     expect(
       mock.invoke.mock.calls.filter(
@@ -283,24 +333,29 @@ it("requires confirmation to remove only the selected catalog entry and refreshe
   );
 });
 it("preserves the list and displays errors when removal fails", async () => {
-  const entry = projectEntry("合成响应");
+  const entry = projectEntry("Synthetic response");
   mock.invoke.mockImplementation(async (command: string) => {
     if (command === "project_list_page")
       return { offset: 0, total: 1, items: [entry] };
-    if (command === "project_remove") throw new Error("项目目录不可用");
+    if (command === "project_remove")
+      throw new Error("Project directory unavailable");
   });
   render(<ProjectHome {...homeProps} />);
   fireEvent.click(
-    await screen.findByRole("button", { name: "从列表移除 合成响应" }),
+    await screen.findByRole("button", {
+      name: "Remove Synthetic response from the list",
+    }),
   );
-  fireEvent.click(screen.getByRole("button", { name: "确认移除" }));
-  expect(await screen.findByRole("alert")).toHaveTextContent("项目目录不可用");
-  expect(screen.getByRole("button", { name: "确认移除" })).toBeEnabled();
-  fireEvent.click(screen.getByRole("button", { name: "取消" }));
+  fireEvent.click(screen.getByRole("button", { name: "Confirm removal" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Project directory unavailable",
+  );
+  expect(screen.getByRole("button", { name: "Confirm removal" })).toBeEnabled();
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
   expect(screen.getByText(entry.info.name)).toBeVisible();
 });
 it("allows missing entries to be removed and prevents duplicate requests while pending", async () => {
-  const entry = { ...projectEntry("缺失项目"), missing: true };
+  const entry = { ...projectEntry("Missing project"), missing: true };
   let finish!: () => void;
   let entries = [entry];
   mock.invoke.mockImplementation((command: string) => {
@@ -320,18 +375,18 @@ it("allows missing entries to be removed and prevents duplicate requests while p
   });
   const { rerender } = render(<ProjectHome {...homeProps} busy />);
   const remove = await screen.findByRole("button", {
-    name: "从列表移除 缺失项目",
+    name: "Remove Missing project from the list",
   });
   expect(remove).toBeDisabled();
-  expect(screen.getByRole("button", { name: "继续项目" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Resume project" })).toBeDisabled();
   rerender(<ProjectHome {...homeProps} />);
   expect(remove).toBeEnabled();
   fireEvent.click(remove);
-  fireEvent.click(screen.getByRole("button", { name: "确认移除" }));
-  const pending = screen.getByRole("button", { name: "正在移除…" });
+  fireEvent.click(screen.getByRole("button", { name: "Confirm removal" }));
+  const pending = screen.getByRole("button", { name: "Removing…" });
   expect(pending).toBeDisabled();
   fireEvent.click(pending);
-  expect(screen.getByRole("button", { name: "取消" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
   expect(
     mock.invoke.mock.calls.filter(([command]) => command === "project_remove"),
   ).toHaveLength(1);
@@ -339,7 +394,7 @@ it("allows missing entries to be removed and prevents duplicate requests while p
   await waitFor(() =>
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
   );
-  await screen.findByText(/项目列表为空/);
+  await screen.findByText(/project list is empty/);
 });
 it("mixes IOC paste and manual inputs and explicitly scans with exact domain policy", async () => {
   mock.invoke.mockImplementation(async (c: string) => {
@@ -350,7 +405,7 @@ it("mixes IOC paste and manual inputs and explicitly scans with exact domain pol
         hits: { offset: 0, total: 0, items: [] },
       };
     if (c === "import_ioc")
-      return { indicators: [], issues: [{ line: 2, message: "无效 IOC" }] };
+      return { indicators: [], issues: [{ line: 2, message: "Invalid IOC" }] };
     if (c === "start_ioc_scan") return { task_id: 1 };
   });
   const onTask = vi.fn(async (f: () => Promise<unknown>) => {
@@ -367,12 +422,14 @@ it("mixes IOC paste and manual inputs and explicitly scans with exact domain pol
       onError={() => {}}
     />,
   );
-  await screen.findByText("有新增证据或清单变更尚未扫描，请主动重新扫描。");
-  fireEvent.change(screen.getByLabelText("手动 IOC"), {
+  await screen.findByText(
+    "New evidence or list changes have not been scanned yet; rescan manually.",
+  );
+  fireEvent.change(screen.getByLabelText("Manual IOC"), {
     target: { value: "2001:db8::1" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "手动添加" }));
-  await screen.findByText("第 2 行：无效 IOC");
+  fireEvent.click(screen.getByRole("button", { name: "Add manually" }));
+  await screen.findByText("Line 2: Invalid IOC");
   expect(mock.invoke).toHaveBeenCalledWith(
     "import_ioc",
     expect.objectContaining({
@@ -380,13 +437,15 @@ it("mixes IOC paste and manual inputs and explicitly scans with exact domain pol
       input: expect.objectContaining({ value: "2001:db8::1" }),
     }),
   );
-  fireEvent.change(screen.getByLabelText("IOC 清单"), {
+  fireEvent.change(screen.getByLabelText("IOC list"), {
     target: { value: "type,value\ndomain,example.com" },
   });
   fireEvent.click(
-    screen.getByRole("checkbox", { name: "CSV 格式（type,value，可选 note）" }),
+    screen.getByRole("checkbox", {
+      name: "CSV format (type,value, optional note)",
+    }),
   );
-  fireEvent.click(screen.getByRole("button", { name: "追加粘贴清单" }));
+  fireEvent.click(screen.getByRole("button", { name: "Append pasted list" }));
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith(
       "import_ioc",
@@ -396,10 +455,14 @@ it("mixes IOC paste and manual inputs and explicitly scans with exact domain pol
     ),
   );
   await waitFor(() =>
-    expect(screen.getByRole("button", { name: "扫描当前项目" })).toBeEnabled(),
+    expect(
+      screen.getByRole("button", { name: "Scan current project" }),
+    ).toBeEnabled(),
   );
-  fireEvent.click(screen.getByRole("checkbox", { name: "域名包含子域名" }));
-  fireEvent.click(screen.getByRole("button", { name: "扫描当前项目" }));
+  fireEvent.click(
+    screen.getByRole("checkbox", { name: "Domains include subdomains" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Scan current project" }));
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith("start_ioc_scan", {
       sessionId: 7,
@@ -447,7 +510,7 @@ it("returns IOC hits to the last valid page after a rescan reduces their total",
   await screen.findByRole("button", { name: "hit-0" });
   const scroll = container.querySelectorAll(".ioc-table-scroll")[1];
   scroll.scrollTop = 500;
-  fireEvent.click(screen.getByRole("button", { name: "IOC 命中 末页" }));
+  fireEvent.click(screen.getByRole("button", { name: "IOC hits Last page" }));
   await screen.findByRole("button", { name: "hit-224" });
   expect(scroll.scrollTop).toBe(0);
   total = 125;
@@ -460,7 +523,7 @@ it("returns IOC hits to the last valid page after a rescan reduces their total",
   });
   await waitFor(() =>
     expect(
-      screen.getByRole("spinbutton", { name: "IOC 命中 跳转页码" }),
+      screen.getByRole("spinbutton", { name: "IOC hits Page number" }),
     ).toHaveValue(2),
   );
   total = 0;
@@ -474,8 +537,8 @@ it("returns IOC hits to the last valid page after a rescan reduces their total",
   );
   expect(
     await within(
-      screen.getByRole("navigation", { name: "IOC 命中分页" }),
-    ).findByText(/0 条 · 第 0 \/ 0 页/),
+      screen.getByRole("navigation", { name: "IOC hits pagination" }),
+    ).findByText(/0 items · Page 0 \/ 0/),
   ).toBeVisible();
   expect(props.onError).not.toHaveBeenCalled();
 });
@@ -503,7 +566,8 @@ it("retries failed IOC pages and ignores a response superseded by a refresh", as
     if (command !== "get_ioc") return Promise.resolve();
     if (args.offset === 100) {
       attempts++;
-      if (attempts === 1) return Promise.reject(new Error("模拟 IOC 分页失败"));
+      if (attempts === 1)
+        return Promise.reject(new Error("Simulated IOC page failure"));
       if (attempts === 2)
         return new Promise((resolve) => {
           finishStale = resolve;
@@ -522,32 +586,32 @@ it("retries failed IOC pages and ignores a response superseded by a refresh", as
     onError: vi.fn(),
   };
   const { rerender, container } = render(<IocView {...props} />);
-  await screen.findByLabelText("说明 item-0.test");
+  await screen.findByLabelText("Note item-0.test");
   const scroll = container.querySelector(".ioc-table-scroll")!;
   scroll.scrollTop = 500;
-  fireEvent.click(screen.getByRole("button", { name: "IOC 清单 下一页" }));
+  fireEvent.click(screen.getByRole("button", { name: "IOC list Next page" }));
   await waitFor(() => expect(props.onError).toHaveBeenCalledTimes(1));
-  expect(screen.getByLabelText("说明 item-0.test")).toBeVisible();
+  expect(screen.getByLabelText("Note item-0.test")).toBeVisible();
   expect(scroll.scrollTop).toBe(500);
-  fireEvent.click(screen.getByRole("button", { name: "IOC 清单 下一页" }));
+  fireEvent.click(screen.getByRole("button", { name: "IOC list Next page" }));
   await waitFor(() => expect(attempts).toBe(2));
   expect(
-    screen.getByRole("button", { name: "IOC 清单 下一页" }),
+    screen.getByRole("button", { name: "IOC list Next page" }),
   ).toBeDisabled();
   rerender(<IocView {...props} revision={2} />);
-  await screen.findByLabelText("说明 item-100-fresh.test");
+  await screen.findByLabelText("Note item-100-fresh.test");
   expect(scroll.scrollTop).toBe(0);
   await act(async () => finishStale(makeView(100, "-stale")));
   expect(
-    screen.queryByLabelText("说明 item-100-stale.test"),
+    screen.queryByLabelText("Note item-100-stale.test"),
   ).not.toBeInTheDocument();
-  expect(screen.getByLabelText("说明 item-100-fresh.test")).toBeVisible();
+  expect(screen.getByLabelText("Note item-100-fresh.test")).toBeVisible();
   expect(props.onError).toHaveBeenCalledTimes(1);
 });
 
 it("pages projects on the server and resets the page after filtering", async () => {
   const entries = Array.from({ length: 125 }, (_, i) =>
-    projectEntry(`合成项目${i}`),
+    projectEntry(`Synthetic project ${i}`),
   );
   mock.invoke.mockImplementation(async (command: string, args: any) =>
     command === "project_list_page"
@@ -559,24 +623,24 @@ it("pages projects on the server and resets the page after filtering", async () 
       : undefined,
   );
   render(<ProjectHome {...homeProps} />);
-  await screen.findByText("合成项目0");
-  fireEvent.click(screen.getByRole("button", { name: "项目 下一页" }));
-  await screen.findByText("合成项目50");
+  await screen.findByText("Synthetic project 0");
+  fireEvent.click(screen.getByRole("button", { name: "Projects Next page" }));
+  await screen.findByText("Synthetic project 50");
   expect(mock.invoke).toHaveBeenCalledWith(
     "project_list_page",
     expect.objectContaining({ offset: 50, limit: 50 }),
   );
-  fireEvent.click(screen.getByRole("button", { name: "项目 末页" }));
-  await screen.findByText("合成项目124");
-  fireEvent.change(screen.getByLabelText("项目搜索"), {
-    target: { value: "筛选" },
+  fireEvent.click(screen.getByRole("button", { name: "Projects Last page" }));
+  await screen.findByText("Synthetic project 124");
+  fireEvent.change(screen.getByLabelText("Project search"), {
+    target: { value: "filter" },
   });
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith(
       "project_list_page",
       expect.objectContaining({
         offset: 0,
-        search: expect.objectContaining({ text: "筛选" }),
+        search: expect.objectContaining({ text: "filter" }),
       }),
     ),
   );
@@ -584,7 +648,7 @@ it("pages projects on the server and resets the page after filtering", async () 
 
 it("keeps the displayed project page after failure and retries the same next page", async () => {
   const entries = Array.from({ length: 75 }, (_, i) =>
-    projectEntry(`项目${i}`),
+    projectEntry(`project ${i}`),
   );
   const error = vi.fn();
   let failed = false;
@@ -592,7 +656,7 @@ it("keeps the displayed project page after failure and retries the same next pag
     if (command !== "project_list_page") return undefined;
     if (args.offset === 50 && !failed) {
       failed = true;
-      throw new Error("模拟分页故障");
+      throw new Error("Simulated pagination failure");
     }
     return {
       offset: args.offset,
@@ -601,18 +665,18 @@ it("keeps the displayed project page after failure and retries the same next pag
     };
   });
   render(<ProjectHome {...homeProps} onError={error} />);
-  await screen.findByText("项目0");
-  fireEvent.click(screen.getByRole("button", { name: "项目 下一页" }));
+  await screen.findByText("project 0");
+  fireEvent.click(screen.getByRole("button", { name: "Projects Next page" }));
   await waitFor(() => expect(error).toHaveBeenCalled());
-  expect(screen.getByText("项目0")).toBeVisible();
-  expect(screen.getByRole("spinbutton", { name: "项目 跳转页码" })).toHaveValue(
-    1,
-  );
-  fireEvent.click(screen.getByRole("button", { name: "项目 下一页" }));
-  await screen.findByText("项目50");
+  expect(screen.getByText("project 0")).toBeVisible();
+  expect(
+    screen.getByRole("spinbutton", { name: "Projects Page number" }),
+  ).toHaveValue(1);
+  fireEvent.click(screen.getByRole("button", { name: "Projects Next page" }));
+  await screen.findByText("project 50");
   await waitFor(() =>
     expect(
-      screen.getByRole("spinbutton", { name: "项目 跳转页码" }),
+      screen.getByRole("spinbutton", { name: "Projects Page number" }),
     ).toHaveValue(2),
   );
 });

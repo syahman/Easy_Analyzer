@@ -67,7 +67,7 @@ const boot: Bootstrap = {
   config_loaded: true,
   config_error: null,
   session_id: 7,
-  selection: { id: 11, count: 150, label: "日志 · 完整筛选" },
+  selection: { id: 11, count: 150, label: "Logs · Local suspicious items" },
   busy: null,
   platform: "macos",
   elevated: null,
@@ -86,9 +86,9 @@ const record: RecordSummary = {
   status: "parsed",
   data: {
     kind: "log",
-    fields: { category: "login", fields: { user: "合成用户" } },
+    fields: { category: "login", fields: { user: "synthetic user" } },
   },
-  summary: "中文证据记录",
+  summary: "Synthetic evidence record",
 };
 function response(r: ViewRequest): ViewResponse {
   return {
@@ -120,7 +120,7 @@ function response(r: ViewRequest): ViewResponse {
       items: [
         {
           id: "source-one",
-          path: "/tmp/中文.log",
+          path: "/tmp/sample.log",
           format: "text",
           sha256: "abc",
           bytes: 500,
@@ -129,7 +129,7 @@ function response(r: ViewRequest): ViewResponse {
       total: 1,
       offset: 0,
     },
-    record_sources: { "source-one": "/tmp/中文.log" },
+    record_sources: { "source-one": "/tmp/sample.log" },
     diagnostics: { items: [], total: 0, offset: 0 },
     runs: { items: [], total: 0, offset: 0 },
     outside: false,
@@ -150,7 +150,7 @@ beforeEach(() => {
     if (command === "initialize") return structuredClone(boot);
     if (command === "get_view") {
       if (args.request.filters.regex && args.request.filters.text === "[")
-        throw "非法正则表达式";
+        throw "regex parse error";
       return response(args.request);
     }
     if (command === "prepare_ai")
@@ -189,7 +189,7 @@ afterEach(cleanup);
 it("shows the local recap after partial AI failure as escaped text without sending again", async () => {
   const original = mock.invoke.getMockImplementation()!;
   const recap =
-    "本地结果整理（不是新的 AI 关联推理）\n成功 2/3，失败证据批次：2\n<script>unsafe()</script>\n证据：evidence-one";
+    "Local result recap (not new AI correlation reasoning)\nSucceeded 2/3, failed evidence batches: 2\n<script>unsafe()</script>\nEvidence: evidence-one";
   mock.invoke.mockImplementation((command, args) => {
     if (command === "get_view") {
       const view = response(args.request);
@@ -216,14 +216,14 @@ it("shows the local recap after partial AI failure as escaped text without sendi
   });
   const { container } = render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getAllByRole("button", { name: "AI 分析" })[1]);
-  await screen.findByText("本地结果整理 · 部分完成");
+  fireEvent.click(screen.getAllByRole("button", { name: "AI analysis" })[1]);
+  await screen.findByText("Local result recap · partially completed");
   expect(container.querySelector(".local-ai-summary pre")?.textContent).toBe(
     recap,
   );
   expect(container.querySelector(".local-ai-summary script")).toBeNull();
   expect(mock.invoke.mock.calls.some(([c]) => c === "start_ai")).toBe(false);
-  fireEvent.click(screen.getByRole("button", { name: /运行历史/ }));
+  fireEvent.click(screen.getByRole("button", { name: /Run history/ }));
   fireEvent.click(screen.getByRole("button", { name: /#1\s*synthetic-model/ }));
   await waitFor(() =>
     expect(document.querySelectorAll(".local-ai-summary")).toHaveLength(2),
@@ -238,8 +238,8 @@ describe("AI batch progress", () => {
       revision: 1,
       kind: "ai",
       status: "running",
-      label: "AI 分析",
-      stage: "AI 批次",
+      label: "AI analysis",
+      stage: "AI batch",
       completed: 1,
       total: 7,
       error: null,
@@ -252,36 +252,36 @@ describe("AI batch progress", () => {
         : invoke(command, args),
     );
     const { container } = render(<App />);
-    await screen.findByText("AI 批次 · 1 / 7");
+    await screen.findByText("AI batch · 1 / 7");
     const listener = mock.event.mock.calls.find(
       ([name]) => name === "analysis-task",
     )![1];
     await act(async () => listener({ payload: { ...task, completed: 7 } }));
-    await screen.findByText("AI 批次 · 7 / 7");
+    await screen.findByText("AI batch · 7 / 7");
     // The last batch is still awaiting its response, not 100% complete.
     expect(container.querySelector(".statusbar .progress-track")).toBeNull();
     await act(async () =>
       listener({
         payload: {
           ...task,
-          stage: "跨批汇总（第 1 轮）",
+          stage: "Cross-batch synthesis (round 1)",
           completed: 1,
           total: 3,
         },
       }),
     );
-    await screen.findByText("跨批汇总（第 1 轮） · 1 / 3");
+    await screen.findByText("Cross-batch synthesis (round 1) · 1 / 3");
     await act(async () =>
       listener({
         payload: {
           ...task,
-          stage: "跨批汇总（第 2 轮）",
+          stage: "Cross-batch synthesis (round 2)",
           completed: 1,
           total: 1,
         },
       }),
     );
-    await screen.findByText("跨批汇总（第 2 轮） · 1 / 1");
+    await screen.findByText("Cross-batch synthesis (round 2) · 1 / 1");
   });
 });
 describe("window closing", () => {
@@ -314,7 +314,7 @@ describe("window closing", () => {
     await waitFor(() =>
       expect(mock.window.onCloseRequested).toHaveBeenCalled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "关闭窗口" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close window" }));
     await waitFor(() => expect(mock.window.destroy).toHaveBeenCalledOnce());
     expect(mock.window.close).toHaveBeenCalledOnce();
     expect(
@@ -346,15 +346,15 @@ describe("window closing", () => {
     await waitFor(() =>
       expect(mock.window.onCloseRequested).toHaveBeenCalled(),
     );
-    const close = screen.getByRole("button", { name: "关闭窗口" });
+    const close = screen.getByRole("button", { name: "Close window" });
     fireEvent.click(close);
     fireEvent.click(close);
     expect(
       mock.invoke.mock.calls.filter(([c]) => c === "save_preferences"),
     ).toHaveLength(1);
     expect(mock.window.destroy).not.toHaveBeenCalled();
-    await act(async () => rejectSave("无法写入"));
-    await screen.findByText("偏好保存失败：无法写入");
+    await act(async () => rejectSave("cannot write"));
+    await screen.findByText("Failed to save preferences: cannot write");
     mock.invoke.mockImplementation(invoke);
     fireEvent.click(close);
     await waitFor(() => expect(mock.window.destroy).toHaveBeenCalledOnce());
@@ -390,7 +390,9 @@ describe("window closing", () => {
     );
     await act(requestClose);
     fireEvent.click(
-      await screen.findByRole("button", { name: "取消任务并保留结果" }),
+      await screen.findByRole("button", {
+        name: "Cancel task and keep results",
+      }),
     );
     await waitFor(() =>
       expect(mock.invoke).toHaveBeenCalledWith("cancel_task", { taskId: 99 }),
@@ -412,9 +414,11 @@ describe("Windows UAC collection", () => {
       if (command === "request_elevation") return "cancelled";
     });
     render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "导入分析" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Import analysis" }),
+    );
     const button = await screen.findByRole("button", {
-      name: "以管理员身份启动",
+      name: "Launch as administrator",
     });
     expect(
       mock.invoke.mock.calls.some(
@@ -422,7 +426,7 @@ describe("Windows UAC collection", () => {
       ),
     ).toBe(false);
     fireEvent.click(button);
-    await screen.findByText("已取消 UAC 授权，仍使用当前窗口");
+    await screen.findByText("UAC cancelled; still using the current window");
     expect(button).toBeEnabled();
     expect(
       mock.invoke.mock.calls.some(([command]) =>
@@ -430,7 +434,7 @@ describe("Windows UAC collection", () => {
       ),
     ).toBe(false);
     expect(mock.window.close).not.toHaveBeenCalled();
-    expect(screen.getByText("普通权限")).toBeInTheDocument();
+    expect(screen.getByText("Standard user")).toBeInTheDocument();
   });
   it("keeps the old window open after an elevated window starts", async () => {
     mock.invoke.mockImplementation(async (command: string, args: any) => {
@@ -439,15 +443,17 @@ describe("Windows UAC collection", () => {
       if (command === "request_elevation") return "launched";
     });
     render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "导入分析" }));
     fireEvent.click(
-      await screen.findByRole("button", { name: "以管理员身份启动" }),
+      await screen.findByRole("button", { name: "Import analysis" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Launch as administrator" }),
     );
     await screen.findByText(
-      "管理员窗口已启动；原窗口和证据保留，请在新窗口开始本机采集",
+      "Administrator window launched; the original window and evidence remain. Start local collection in the new window",
     );
     expect(mock.window.close).not.toHaveBeenCalled();
-    expect(screen.getByText("普通权限")).toBeInTheDocument();
+    expect(screen.getByText("Standard user")).toBeInTheDocument();
   });
   it("shows elevated status without prompting again or collecting automatically", async () => {
     mock.invoke.mockImplementation(async (command: string, args: any) => {
@@ -455,13 +461,15 @@ describe("Windows UAC collection", () => {
       if (command === "get_view") return response(args.request);
     });
     render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "导入分析" }));
-    await screen.findByText("管理员权限");
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Import analysis" }),
+    );
+    await screen.findByText("Administrator");
     expect(
-      screen.queryByRole("button", { name: "以管理员身份启动" }),
+      screen.queryByRole("button", { name: "Launch as administrator" }),
     ).toBeNull();
     expect(
-      screen.getByRole("checkbox", { name: "采集本机进程" }),
+      screen.getByRole("checkbox", { name: "Capture local processes" }),
     ).toBeChecked();
     expect(
       mock.invoke.mock.calls.some(([command]) =>
@@ -473,15 +481,19 @@ describe("Windows UAC collection", () => {
     mock.invoke.mockImplementation(async (command: string, args: any) => {
       if (command === "initialize") return windowsBoot();
       if (command === "get_view") return response(args.request);
-      if (command === "request_elevation") throw "模拟启动失败";
+      if (command === "request_elevation") throw "Simulated launch failure";
     });
     render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "导入分析" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Import analysis" }),
+    );
     const button = await screen.findByRole("button", {
-      name: "以管理员身份启动",
+      name: "Launch as administrator",
     });
     fireEvent.click(button);
-    await screen.findByText("无法启动管理员窗口：模拟启动失败");
+    await screen.findByText(
+      "Could not launch the administrator window: Simulated launch failure",
+    );
     expect(button).toBeEnabled();
     expect(mock.window.close).not.toHaveBeenCalled();
     expect(
@@ -496,14 +508,16 @@ it("normal startup has no evidence, imports or automatic AI requests", async () 
       : undefined,
   );
   render(<App />);
-  await screen.findByText("每次应急响应独立保存，继续已有项目或新建项目");
+  await screen.findByText(
+    "Each incident response is saved independently; resume an existing project or create one",
+  );
   await waitFor(() => expect(mock.window.onDragDropEvent).toHaveBeenCalled());
   expect(
     mock.invoke.mock.calls.some(([v]) =>
       ["start_import", "start_ai"].includes(v),
     ),
   ).toBe(false);
-  expect(screen.getByRole("button", { name: "导出报告" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Export report" })).toBeDisabled();
 });
 it("renders every table field, preserves backend total and requests next offset", () => {
   const onPage = vi.fn();
@@ -511,11 +525,11 @@ it("renders every table field, preserves backend total and requests next offset"
     <DataTable
       page={{ items: [record], total: 100000, offset: 0 }}
       columns={[
-        { accessorKey: "timestamp", header: "时间" },
-        { accessorKey: "source_id", header: "来源" },
-        { accessorKey: "status", header: "状态" },
-        { accessorKey: "summary", header: "摘要" },
-        { accessorKey: "position", header: "位置" },
+        { accessorKey: "timestamp", header: "Time" },
+        { accessorKey: "source_id", header: "Source" },
+        { accessorKey: "status", header: "Status" },
+        { accessorKey: "summary", header: "Summary" },
+        { accessorKey: "position", header: "Position" },
       ]}
       id={(v) => v.id}
       limit={100}
@@ -523,17 +537,17 @@ it("renders every table field, preserves backend total and requests next offset"
     />,
   );
   expect(screen.getAllByRole("cell")).toHaveLength(5);
-  expect(screen.getByText("中文证据记录")).toBeInTheDocument();
-  expect(screen.getByText("100,000 条 · 第 1 / 1000 页")).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "下一页" }));
+  expect(screen.getByText("Synthetic evidence record")).toBeInTheDocument();
+  expect(screen.getByText("100,000 items · Page 1 / 1000")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Next page" }));
   expect(onPage).toHaveBeenCalledWith(100);
 });
 it("invalid regex retains previous valid records and scope; paging is sent to Rust", async () => {
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getByRole("button", { name: "日志证据" }));
-  await screen.findByText("中文证据记录");
-  fireEvent.click(screen.getByRole("button", { name: "下一页" }));
+  fireEvent.click(screen.getByRole("button", { name: "Log evidence" }));
+  await screen.findByText("Synthetic evidence record");
+  fireEvent.click(screen.getByRole("button", { name: "Next page" }));
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith(
       "get_view",
@@ -544,13 +558,13 @@ it("invalid regex retains previous valid records and scope; paging is sent to Ru
       }),
     ),
   );
-  fireEvent.change(screen.getByRole("textbox", { name: "查询证据" }), {
+  fireEvent.change(screen.getByRole("textbox", { name: "Query evidence" }), {
     target: { value: "[" },
   });
-  fireEvent.click(screen.getByRole("checkbox", { name: "正则" }));
-  await screen.findByText("非法正则表达式");
-  expect(screen.getByText("中文证据记录")).toBeInTheDocument();
-  fireEvent.click(screen.getAllByRole("button", { name: "AI 分析" })[1]);
+  fireEvent.click(screen.getByRole("checkbox", { name: "Regex" }));
+  await screen.findByText("regex parse error");
+  expect(screen.getByText("Synthetic evidence record")).toBeInTheDocument();
+  fireEvent.click(screen.getAllByRole("button", { name: "AI analysis" })[1]);
   await screen.findByText("synthetic-model");
   expect(
     mock.invoke.mock.calls.filter((v) => v[0] === "start_ai"),
@@ -559,15 +573,15 @@ it("invalid regex retains previous valid records and scope; paging is sent to Ru
 it("IME candidate confirmation does not submit an incomplete evidence query", async () => {
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getByRole("button", { name: "日志证据" }));
-  await screen.findByText("中文证据记录");
-  const input = screen.getByRole("textbox", { name: "查询证据" });
+  fireEvent.click(screen.getByRole("button", { name: "Log evidence" }));
+  await screen.findByText("Synthetic evidence record");
+  const input = screen.getByRole("textbox", { name: "Query evidence" });
   const form = input.closest("form")!;
   const before = mock.invoke.mock.calls.filter(
     (v) => v[0] === "get_view",
   ).length;
   fireEvent.compositionStart(input);
-  fireEvent.change(input, { target: { value: "中文核查" } });
+  fireEvent.change(input, { target: { value: "keyword check" } });
   expect(fireEvent.keyDown(input, { key: "Enter", isComposing: true })).toBe(
     false,
   );
@@ -583,7 +597,7 @@ it("IME candidate confirmation does not submit an incomplete evidence query", as
       "get_view",
       expect.objectContaining({
         request: expect.objectContaining({
-          filters: expect.objectContaining({ text: "中文核查" }),
+          filters: expect.objectContaining({ text: "keyword check" }),
         }),
       }),
     ),
@@ -603,16 +617,18 @@ it("native dropped files populate the pending list without importing or sending 
       payload: {
         type: "drop",
         paths: [
-          "/tmp/中文证据.log",
-          "/tmp/中文证据.log",
+          "/tmp/evidence.log",
+          "/tmp/evidence.log",
           "/tmp/network.pcapng",
         ],
       },
     }),
   );
-  expect(screen.getAllByText("中文证据.log")).toHaveLength(1);
+  expect(screen.getAllByText("evidence.log")).toHaveLength(1);
   expect(screen.getByText("network.pcapng")).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "开始本地分析" })).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Start local analysis" }),
+  ).toBeEnabled();
   expect(
     mock.invoke.mock.calls.some(([v]) =>
       ["start_import", "start_ai"].includes(v),
@@ -622,9 +638,9 @@ it("native dropped files populate the pending list without importing or sending 
 it("AI starts only explicitly and raw payload is opt-in", async () => {
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getAllByRole("button", { name: "AI 分析" })[1]);
+  fireEvent.click(screen.getAllByRole("button", { name: "AI analysis" })[1]);
   await screen.findByText("synthetic-model");
-  const button = screen.getByRole("button", { name: "运行 AI 分析" });
+  const button = screen.getByRole("button", { name: "Run AI analysis" });
   await waitFor(() => expect(button).toBeEnabled());
   fireEvent.click(button);
   await waitFor(() =>
@@ -642,19 +658,25 @@ it("AI starts only explicitly and raw payload is opt-in", async () => {
 it("failed local planning blocks sending and offers a retry", async () => {
   const original = mock.invoke.getMockImplementation()!;
   mock.invoke.mockImplementation((c, args) =>
-    c === "prepare_ai" ? Promise.reject("上下文预算不足") : original(c, args),
+    c === "prepare_ai"
+      ? Promise.reject("context budget too small")
+      : original(c, args),
   );
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getAllByRole("button", { name: "AI 分析" })[1]);
-  await screen.findByText("预览失败：上下文预算不足");
-  expect(screen.getByRole("button", { name: "运行 AI 分析" })).toBeDisabled();
+  fireEvent.click(screen.getAllByRole("button", { name: "AI analysis" })[1]);
+  await screen.findByText("Preview failed: context budget too small");
+  expect(
+    screen.getByRole("button", { name: "Run AI analysis" }),
+  ).toBeDisabled();
   expect(mock.invoke.mock.calls.some(([c]) => c === "start_ai")).toBe(false);
   mock.invoke.mockImplementation(original);
-  fireEvent.click(screen.getByRole("button", { name: "重新计算" }));
-  await screen.findByText("单次完整发送 · 字节兼容模式");
+  fireEvent.click(screen.getByRole("button", { name: "Recalculate" }));
+  await screen.findByText("Single full send · byte-compatible mode");
   await waitFor(() =>
-    expect(screen.getByRole("button", { name: "运行 AI 分析" })).toBeEnabled(),
+    expect(
+      screen.getByRole("button", { name: "Run AI analysis" }),
+    ).toBeEnabled(),
   );
 });
 it("ignores stale previews and only sends the latest explicitly selected payload plan", async () => {
@@ -667,10 +689,12 @@ it("ignores stale previews and only sends the latest explicitly selected payload
   );
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getAllByRole("button", { name: "AI 分析" })[1]);
+  fireEvent.click(screen.getAllByRole("button", { name: "AI analysis" })[1]);
   await waitFor(() => expect(pending).toHaveLength(1));
   fireEvent.click(
-    screen.getByRole("checkbox", { name: "本次包含原始包与载荷" }),
+    screen.getByRole("checkbox", {
+      name: "Include raw packets and payloads this run",
+    }),
   );
   await waitFor(() => expect(pending).toHaveLength(2));
   const preview = {
@@ -687,7 +711,7 @@ it("ignores stale previews and only sends the latest explicitly selected payload
     },
   };
   await act(async () => pending[1].resolve(preview));
-  await screen.findByText(/分为 2 个证据批次/);
+  await screen.findByText(/Split into 2 evidence batches/);
   await act(async () =>
     pending[0].resolve({
       ...preview,
@@ -695,10 +719,10 @@ it("ignores stale previews and only sends the latest explicitly selected payload
       plan: { ...preview.plan, evidence_batches: 1 },
     }),
   );
-  expect(screen.queryByText(/单次完整发送/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Single full send/)).not.toBeInTheDocument();
   expect(mock.invoke.mock.calls.some(([c]) => c === "start_ai")).toBe(false);
   expect(pending[1].args.request.include_payload).toBe(true);
-  fireEvent.click(screen.getByRole("button", { name: "运行 AI 分析" }));
+  fireEvent.click(screen.getByRole("button", { name: "Run AI analysis" }));
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith("start_ai", {
       request: {
@@ -736,7 +760,7 @@ it("localizes nested Windows attributes while preserving their keys and values",
       onClose={() => {}}
     />,
   );
-  expect(screen.getByText("执行线程 ID")).toHaveAttribute("title", key);
+  expect(screen.getByText("Execution thread ID")).toHaveAttribute("title", key);
   expect(screen.getByText("0042")).toBeInTheDocument();
   expect(detail.record.raw).toBe(`${key}=0042`);
   expect(detail.record.data).toMatchObject({
@@ -746,7 +770,7 @@ it("localizes nested Windows attributes while preserving their keys and values",
 it("raw evidence is displayed as text and cannot render HTML", async () => {
   const detail: DetailResponse = {
     session_id: 7,
-    record: { ...record, raw: "<img src=x onerror=alert(1)> 中文原文" },
+    record: { ...record, raw: "<img src=x onerror=alert(1)> raw text" },
     source: null,
     related: [],
   };
@@ -760,9 +784,9 @@ it("raw evidence is displayed as text and cannot render HTML", async () => {
       onClose={() => {}}
     />,
   );
-  await userEvent.click(screen.getByRole("tab", { name: "原文" }));
+  await userEvent.click(screen.getByRole("tab", { name: "Raw" }));
   expect(
-    screen.getByText("<img src=x onerror=alert(1)> 中文原文"),
+    screen.getByText("<img src=x onerror=alert(1)> raw text"),
   ).toBeInTheDocument();
   expect(container.querySelector("img")).toBeNull();
 });
@@ -776,7 +800,7 @@ it("existing keys are status-only; replacement remains masked and explicit", () 
       path="/tmp/gui.toml"
       onPath={() => {}}
       busy={false}
-      checkStatus="尚未检查"
+      checkStatus="Not checked yet"
       onPick={() => {}}
       onApply={() => {}}
       onSave={() => {}}
@@ -784,8 +808,8 @@ it("existing keys are status-only; replacement remains masked and explicit", () 
       onCheck={() => {}}
     />,
   );
-  expect(screen.getByText("已配置")).toBeInTheDocument();
-  const input = screen.getByLabelText("新的 API 密钥");
+  expect(screen.getByText("Configured")).toBeInTheDocument();
+  const input = screen.getByLabelText("New API key");
   expect(input).toHaveAttribute("type", "password");
   expect(input).toHaveValue("");
   fireEvent.change(input, { target: { value: "sk-synthetic" } });
@@ -799,16 +823,18 @@ it("existing keys are status-only; replacement remains masked and explicit", () 
 it("current-filter AI sends the full selection token and resets payload after each run", async () => {
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getByRole("button", { name: "日志证据" }));
-  await screen.findByText("中文证据记录");
-  fireEvent.click(screen.getAllByRole("button", { name: "AI 分析" })[1]);
+  fireEvent.click(screen.getByRole("button", { name: "Log evidence" }));
+  await screen.findByText("Synthetic evidence record");
+  fireEvent.click(screen.getAllByRole("button", { name: "AI analysis" })[1]);
   await screen.findByText("synthetic-model");
-  fireEvent.click(screen.getByRole("button", { name: "当前筛选" }));
+  fireEvent.click(screen.getByRole("button", { name: "Current filter" }));
   expect(screen.getByText("150")).toBeInTheDocument();
   fireEvent.click(
-    screen.getByRole("checkbox", { name: "本次包含原始包与载荷" }),
+    screen.getByRole("checkbox", {
+      name: "Include raw packets and payloads this run",
+    }),
   );
-  const runButton = screen.getByRole("button", { name: "运行 AI 分析" });
+  const runButton = screen.getByRole("button", { name: "Run AI analysis" });
   await waitFor(() => expect(runButton).toBeEnabled());
   fireEvent.click(runButton);
   await waitFor(() =>
@@ -823,7 +849,9 @@ it("current-filter AI sends the full selection token and resets payload after ea
     }),
   );
   expect(
-    screen.getByRole("checkbox", { name: "本次包含原始包与载荷" }),
+    screen.getByRole("checkbox", {
+      name: "Include raw packets and payloads this run",
+    }),
   ).not.toBeChecked();
   await mock.event.mock.calls[0][1]({
     payload: {
@@ -837,13 +865,15 @@ it("current-filter AI sends the full selection token and resets payload after ea
       stage: null,
       completed: 1,
       total: null,
-      error: "后续批次失败，已保留有效发现",
+      error: "Later batches failed; valid findings are retained.",
       saved_paths: [],
     },
   });
-  await screen.findByText("后续批次失败，已保留有效发现");
+  await screen.findByText("Later batches failed; valid findings are retained.");
   expect(
-    screen.getByRole("checkbox", { name: "本次包含原始包与载荷" }),
+    screen.getByRole("checkbox", {
+      name: "Include raw packets and payloads this run",
+    }),
   ).not.toBeChecked();
 });
 it("evidence references locate records and return restores the original finding", async () => {
@@ -852,8 +882,8 @@ it("evidence references locate records and return restores the original finding"
     id: "f-one",
     origin: "local:test",
     severity: "high",
-    title: "合成发现",
-    description: "仅用于测试",
+    title: "Synthetic finding",
+    description: "for testing only",
     evidence_ids: ["evidence-one"],
     confidence: 0.8,
     recommendations: [],
@@ -868,7 +898,7 @@ it("evidence references locate records and return restores the original finding"
     if (c === "get_detail")
       return {
         session_id: 7,
-        record: { ...record, raw: "合成原文" },
+        record: { ...record, raw: "synthetic raw" },
         source: null,
         related: [],
       };
@@ -876,11 +906,11 @@ it("evidence references locate records and return restores the original finding"
   });
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getByRole("button", { name: "分析概览" }));
-  await screen.findByText("合成发现");
-  fireEvent.click(screen.getByText("合成发现"));
+  fireEvent.click(screen.getByRole("button", { name: "Analysis overview" }));
+  await screen.findByText("Synthetic finding");
+  fireEvent.click(screen.getByText("Synthetic finding"));
   fireEvent.click(screen.getByRole("button", { name: "evidence-one" }));
-  await screen.findByRole("button", { name: "返回原视图" });
+  await screen.findByRole("button", { name: "Back to previous view" });
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith(
       "get_view",
@@ -893,35 +923,43 @@ it("evidence references locate records and return restores the original finding"
       }),
     ),
   );
-  fireEvent.click(screen.getByRole("button", { name: "返回原视图" }));
-  await screen.findByRole("heading", { name: "合成发现" });
-  expect(screen.getByRole("heading", { name: "分析概览" })).toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Back to previous view" }),
+  );
+  await screen.findByRole("heading", { name: "Synthetic finding" });
+  expect(
+    screen.getByRole("heading", { name: "Analysis overview" }),
+  ).toBeInTheDocument();
 });
 
 it("source details preserve full paths and hashes despite compact table labels", () => {
   const source = {
     id: "source-demo",
-    path: "/long/synthetic/path/中文.log",
+    path: "/long/synthetic/path/sample.log",
     format: "text",
     bytes: 1024,
     sha256: "a".repeat(64),
   };
   render(<SourceInspector source={source} onClose={() => {}} />);
-  expect(screen.getByText("中文.log")).toBeInTheDocument();
+  expect(screen.getByText("sample.log")).toBeInTheDocument();
   expect(screen.getByText(source.path)).toBeInTheDocument();
   expect(screen.getByText(source.sha256)).toBeInTheDocument();
 });
 
 it("AI edits a full evidence selection locally and sends the new selection only explicitly", async () => {
   const original = mock.invoke.getMockImplementation()!;
-  let selected = { id: 22, count: 250, label: "日志 · 关键词：合成组甲" };
+  let selected = {
+    id: 22,
+    count: 250,
+    label: "Logs · Keyword: synthetic group A",
+  };
   mock.invoke.mockImplementation((c, args) => {
     if (c === "initialize")
       return { ...boot, selection: { id: null, count: 0, label: "" } };
     if (
       c === "get_view" &&
       args.request.screen === "logs" &&
-      args.request.filters.text === "合成组甲"
+      args.request.filters.text === "synthetic group A"
     )
       return {
         ...response(args.request),
@@ -934,12 +972,15 @@ it("AI edits a full evidence selection locally and sends the new selection only 
   });
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getAllByRole("button", { name: "AI 分析" })[1]);
-  fireEvent.click(await screen.findByRole("button", { name: "编辑筛选" }));
-  fireEvent.change(screen.getByRole("textbox", { name: "发送证据查询" }), {
-    target: { value: "合成组甲" },
-  });
-  fireEvent.click(screen.getByRole("button", { name: "应用筛选" }));
+  fireEvent.click(screen.getAllByRole("button", { name: "AI analysis" })[1]);
+  fireEvent.click(await screen.findByRole("button", { name: "Edit filter" }));
+  fireEvent.change(
+    screen.getByRole("textbox", { name: "Evidence query to send" }),
+    {
+      target: { value: "synthetic group A" },
+    },
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Apply filter" }));
   await waitFor(() =>
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
   );
@@ -949,7 +990,7 @@ it("AI edits a full evidence selection locally and sends the new selection only 
       commit_selection: true,
       focus_id: null,
       filters: expect.objectContaining({
-        text: "合成组甲",
+        text: "synthetic group A",
         offset: 0,
         limit: 100,
       }),
@@ -957,13 +998,17 @@ it("AI edits a full evidence selection locally and sends the new selection only 
   });
   expect(mock.invoke.mock.calls.some(([c]) => c === "start_ai")).toBe(false);
   expect(
-    screen.queryByRole("combobox", { name: "发现来源" }),
+    screen.queryByRole("combobox", { name: "Finding origin" }),
   ).not.toBeInTheDocument();
   await waitFor(() =>
-    expect(screen.getByRole("button", { name: "运行 AI 分析" })).toBeEnabled(),
+    expect(
+      screen.getByRole("button", { name: "Run AI analysis" }),
+    ).toBeEnabled(),
   );
-  expect(screen.getByText("日志 · 关键词：合成组甲")).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "运行 AI 分析" }));
+  expect(
+    screen.getByText("Logs · Keyword: synthetic group A"),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Run AI analysis" }));
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith("start_ai", {
       request: expect.objectContaining({
@@ -989,10 +1034,12 @@ it("AI current selection has an editor even when no previous evidence selection 
   });
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getAllByRole("button", { name: "AI 分析" })[1]);
-  fireEvent.click(await screen.findByRole("button", { name: "当前筛选" }));
+  fireEvent.click(screen.getAllByRole("button", { name: "AI analysis" })[1]);
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Current filter" }),
+  );
   expect(
-    screen.getByRole("dialog", { name: "筛选发送证据" }),
+    screen.getByRole("dialog", { name: "Filter evidence to send" }),
   ).toBeInTheDocument();
   expect(mock.invoke.mock.calls.some(([c]) => c === "start_ai")).toBe(false);
 });
@@ -1000,12 +1047,14 @@ it("AI current selection has an editor even when no previous evidence selection 
 it("invalid AI filter keeps the previous selection and Chinese composition does not submit", async () => {
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getAllByRole("button", { name: "AI 分析" })[1]);
-  fireEvent.click(await screen.findByRole("button", { name: "当前筛选" }));
-  fireEvent.click(screen.getByRole("button", { name: "编辑筛选" }));
-  const input = screen.getByRole("textbox", { name: "发送证据查询" });
+  fireEvent.click(screen.getAllByRole("button", { name: "AI analysis" })[1]);
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Current filter" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Edit filter" }));
+  const input = screen.getByRole("textbox", { name: "Evidence query to send" });
   fireEvent.change(input, { target: { value: "[" } });
-  fireEvent.click(screen.getByRole("checkbox", { name: "正则表达式" }));
+  fireEvent.click(screen.getByRole("checkbox", { name: "Regular expression" }));
   const before = mock.invoke.mock.calls.length;
   fireEvent.compositionStart(input);
   expect(
@@ -1014,18 +1063,22 @@ it("invalid AI filter keeps the previous selection and Chinese composition does 
   fireEvent.submit(input.closest("form")!);
   expect(mock.invoke.mock.calls.length).toBe(before);
   fireEvent.compositionEnd(input);
-  fireEvent.click(screen.getByRole("button", { name: "应用筛选" }));
+  fireEvent.click(screen.getByRole("button", { name: "Apply filter" }));
   await screen.findByRole("alert");
-  expect(screen.getByRole("alert")).toHaveTextContent("保留上一次有效筛选");
-  fireEvent.click(screen.getByRole("button", { name: "取消" }));
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "The last valid filter is kept.",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
   await waitFor(() =>
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
   );
-  expect(screen.getByText("日志 · 完整筛选")).toBeInTheDocument();
+  expect(screen.getByText("Logs · Local suspicious items")).toBeInTheDocument();
   await waitFor(() =>
-    expect(screen.getByRole("button", { name: "运行 AI 分析" })).toBeEnabled(),
+    expect(
+      screen.getByRole("button", { name: "Run AI analysis" }),
+    ).toBeEnabled(),
   );
-  fireEvent.click(screen.getByRole("button", { name: "运行 AI 分析" }));
+  fireEvent.click(screen.getByRole("button", { name: "Run AI analysis" }));
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith("start_ai", {
       request: expect.objectContaining({ scope: "matches", selection_id: 11 }),
@@ -1039,8 +1092,8 @@ function dirtyProjectBoot(): Bootstrap {
     project: {
       info: {
         id: "synthetic-project-id",
-        name: "客户甲响应",
-        client: "客户甲",
+        name: "Client A response",
+        client: "Client A",
         response_start: "2026-10-05T09:00:00+08:00",
         response_end: null,
         location: "",
@@ -1065,7 +1118,7 @@ it("protects dirty projects when switching and waits for a successful save", asy
     revision: 2,
     kind: "project_save",
     status: "running",
-    label: "保存项目",
+    label: "Save project",
     stage: null,
     completed: null,
     total: null,
@@ -1081,9 +1134,9 @@ it("protects dirty projects when switching and waits for a successful save", asy
   );
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getAllByRole("button", { name: "新建项目" })[0]);
-  await screen.findByText("项目有未保存的修改");
-  fireEvent.click(screen.getByRole("button", { name: "保存并继续" }));
+  fireEvent.click(screen.getAllByRole("button", { name: "New project" })[0]);
+  await screen.findByText("Project has unsaved changes");
+  fireEvent.click(screen.getByRole("button", { name: "Save and continue" }));
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith("project_save", {
       sessionId: 7,
@@ -1091,16 +1144,22 @@ it("protects dirty projects when switching and waits for a successful save", asy
       overwrite: false,
     }),
   );
-  expect(screen.queryByText("新建应急响应项目")).not.toBeInTheDocument();
+  expect(
+    screen.queryByText("New incident response project"),
+  ).not.toBeInTheDocument();
   const listener = mock.event.mock.calls.find(
     ([name]) => name === "analysis-task",
   )![1];
   await act(async () =>
-    listener({ payload: { ...job, status: "failed", error: "合成保存失败" } }),
+    listener({
+      payload: { ...job, status: "failed", error: "Synthetic save failure" },
+    }),
   );
-  expect(screen.getByText("项目有未保存的修改")).toBeInTheDocument();
-  expect(screen.queryByText("新建应急响应项目")).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "保存并继续" }));
+  expect(screen.getByText("Project has unsaved changes")).toBeInTheDocument();
+  expect(
+    screen.queryByText("New incident response project"),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Save and continue" }));
   fresh = { ...fresh, project: { ...fresh.project!, dirty: false } };
   await act(async () =>
     listener({
@@ -1112,7 +1171,7 @@ it("protects dirty projects when switching and waits for a successful save", asy
       },
     }),
   );
-  await screen.findByText("新建应急响应项目");
+  await screen.findByText("New incident response project");
 });
 it("prevents closing a dirty project until the user resolves unsaved changes", async () => {
   const original = mock.invoke.getMockImplementation()!;
@@ -1128,9 +1187,9 @@ it("prevents closing a dirty project until the user resolves unsaved changes", a
     mock.window.onCloseRequested.mock.calls.at(-1)![0](event),
   );
   expect(event.preventDefault).toHaveBeenCalled();
-  await screen.findByText("项目有未保存的修改");
+  await screen.findByText("Project has unsaved changes");
   expect(mock.window.destroy).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole("button", { name: "放弃修改并继续" }));
+  fireEvent.click(screen.getByRole("button", { name: "Discard and continue" }));
   await waitFor(() => expect(mock.window.destroy).toHaveBeenCalledTimes(1));
 });
 
@@ -1150,7 +1209,7 @@ it("edits all project details through explicit entries and restores them after s
     revision: 3,
     kind: "project_save",
     status: "running",
-    label: "保存项目",
+    label: "Save project",
     stage: null,
     completed: null,
     total: null,
@@ -1189,21 +1248,21 @@ it("edits all project details through explicit entries and restores them after s
     return original(cmd, args);
   });
   const { unmount } = render(<App />);
-  await screen.findByRole("heading", { name: "当前项目资料" });
-  fireEvent.click(screen.getByRole("button", { name: "编辑资料" }));
-  await screen.findByRole("dialog", { name: "编辑项目资料" });
+  await screen.findByRole("heading", { name: "Current project details" });
+  fireEvent.click(screen.getByRole("button", { name: "Edit details" }));
+  await screen.findByRole("dialog", { name: "Edit project details" });
   const values = [
-    ["项目名称", "更新后的响应"],
-    ["客户单位 *", "更新后的客户"],
-    ["响应开始时间（含时区） *", "2026-10-13T09:00:00+08:00"],
-    ["响应结束时间（含时区）", "2026-10-14T18:00:00+08:00"],
-    ["响应地点", "合成地点"],
-    ["服务人员", "合成服务人员"],
-    ["项目说明", "更新后的项目说明"],
+    ["Project name", "Updated response"],
+    ["Client organization *", "Updated client"],
+    ["Response start (with time zone) *", "2026-10-13T09:00:00+08:00"],
+    ["Response end (with time zone)", "2026-10-14T18:00:00+08:00"],
+    ["Response location", "Synthetic location"],
+    ["Responders", "Synthetic responders"],
+    ["Project description", "Updated project description"],
   ];
   for (const [label, value] of values)
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
-  fireEvent.click(screen.getByRole("button", { name: "应用修改" }));
+  fireEvent.click(screen.getByRole("button", { name: "Apply changes" }));
   await waitFor(() =>
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
   );
@@ -1211,20 +1270,20 @@ it("edits all project details through explicit entries and restores them after s
     sessionId: 7,
     info: expect.objectContaining({
       ...identity,
-      name: "更新后的响应",
-      client: "更新后的客户",
+      name: "Updated response",
+      client: "Updated client",
       response_start: "2026-10-13T09:00:00+08:00",
       response_end: "2026-10-14T18:00:00+08:00",
-      location: "合成地点",
-      responders: "合成服务人员",
-      description: "更新后的项目说明",
+      location: "Synthetic location",
+      responders: "Synthetic responders",
+      description: "Updated project description",
     }),
   });
-  const card = screen.getByRole("region", { name: "当前项目资料" });
-  expect(within(card).getByText("有未保存的修改")).toBeVisible();
+  const card = screen.getByRole("region", { name: "Current project details" });
+  expect(within(card).getByText("Unsaved changes")).toBeVisible();
   for (const [, value] of values)
     expect(within(card).getByText(value)).toBeVisible();
-  fireEvent.click(screen.getByRole("button", { name: "保存 *" }));
+  fireEvent.click(screen.getByRole("button", { name: "Save *" }));
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith("project_save", {
       sessionId: 7,
@@ -1246,13 +1305,13 @@ it("edits all project details through explicit entries and restores them after s
       },
     }),
   );
-  await waitFor(() => expect(within(card).getByText("已保存")).toBeVisible());
-  await screen.findByRole("heading", { name: "更新后的响应" });
+  await waitFor(() => expect(within(card).getByText("Saved")).toBeVisible());
+  await screen.findByRole("heading", { name: "Updated response" });
   unmount();
   render(<App />);
-  await screen.findByRole("heading", { name: "当前项目资料" });
-  fireEvent.click(screen.getByRole("button", { name: "编辑项目资料" }));
-  await screen.findByRole("dialog", { name: "编辑项目资料" });
+  await screen.findByRole("heading", { name: "Current project details" });
+  fireEvent.click(screen.getByRole("button", { name: "Edit project details" }));
+  await screen.findByRole("dialog", { name: "Edit project details" });
   for (const [label, value] of values)
     expect(screen.getByLabelText(label)).toHaveValue(value);
   expect(mock.invoke.mock.calls.some(([cmd]) => cmd === "project_create")).toBe(
@@ -1274,18 +1333,24 @@ describe("response command navigation", () => {
     await waitFor(() =>
       expect(mock.window.onCloseRequested).toHaveBeenCalled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "应急响应命令" }));
-    expect(screen.getByRole("heading", { name: "应急响应命令" })).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Incident response commands" }),
+    );
+    expect(
+      screen.getByRole("heading", { name: "Incident response commands" }),
+    ).toBeVisible();
     expect(screen.getByRole("tab", { name: "Windows" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
     expect(
-      screen.queryByRole("button", { name: "切换详情" }),
+      screen.queryByRole("button", { name: "Toggle details" }),
     ).not.toBeInTheDocument();
     expect(document.querySelector(".inspector")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "复制 查看系统信息" }));
-    await screen.findByText("已复制完整命令");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy Show system information" }),
+    );
+    await screen.findByText("Full command copied");
     expect(mock.invoke).toHaveBeenCalledWith(
       "plugin:clipboard-manager|write_text",
       { text: "systeminfo" },
@@ -1316,12 +1381,12 @@ describe("response command navigation", () => {
     await waitFor(() =>
       expect(mock.window.onCloseRequested).toHaveBeenCalled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "日志证据" }));
-    await screen.findByText("中文证据记录");
-    fireEvent.change(screen.getByLabelText("查询证据"), {
+    fireEvent.click(screen.getByRole("button", { name: "Log evidence" }));
+    await screen.findByText("Synthetic evidence record");
+    fireEvent.change(screen.getByLabelText("Query evidence"), {
       target: { value: "192.0.2.10" },
     });
-    fireEvent.submit(screen.getByLabelText("查询证据").closest("form")!);
+    fireEvent.submit(screen.getByLabelText("Query evidence").closest("form")!);
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 600));
     });
@@ -1335,12 +1400,19 @@ describe("response command navigation", () => {
       .filter(([command]) => command === "project_filters")
       .at(-1)![1].filters;
     expect(savedFilters).not.toHaveProperty("commands");
-    fireEvent.click(screen.getByRole("button", { name: "应急响应命令" }));
-    fireEvent.change(screen.getByLabelText("搜索应急响应命令"), {
-      target: { value: "systeminfo" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "复制 查看系统信息" }));
-    await screen.findByText("已复制完整命令");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Incident response commands" }),
+    );
+    fireEvent.change(
+      screen.getByLabelText("Search incident response commands"),
+      {
+        target: { value: "systeminfo" },
+      },
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy Show system information" }),
+    );
+    await screen.findByText("Full command copied");
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 600));
     });
@@ -1352,9 +1424,9 @@ describe("response command navigation", () => {
         ([command]) => command === "project_filters",
       ),
     ).toHaveLength(saves);
-    expect(screen.getByText("客户甲响应 · 客户甲")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "日志证据" }));
-    expect(screen.getByLabelText("查询证据")).toHaveValue("192.0.2.10");
+    expect(screen.getByText("Client A response · Client A")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Log evidence" }));
+    expect(screen.getByLabelText("Query evidence")).toHaveValue("192.0.2.10");
   });
 
   it.each([false, true])(
@@ -1368,7 +1440,7 @@ describe("response command navigation", () => {
         revision: 1,
         kind: "import",
         status: "running",
-        label: "本地分析",
+        label: "Local analysis",
         stage: null,
         completed: null,
         total: null,
@@ -1385,7 +1457,9 @@ describe("response command navigation", () => {
       await waitFor(() =>
         expect(mock.window.onCloseRequested).toHaveBeenCalled(),
       );
-      fireEvent.click(screen.getByRole("button", { name: "应急响应命令" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Incident response commands" }),
+      );
       fireEvent.mouseDown(screen.getByRole("tab", { name: "Linux" }), {
         button: 0,
         ctrlKey: false,
@@ -1401,7 +1475,7 @@ describe("response command navigation", () => {
         listener({ payload: { ...job, status: "completed" } }),
       );
       expect(
-        screen.getByRole("heading", { name: "应急响应命令" }),
+        screen.getByRole("heading", { name: "Incident response commands" }),
       ).toBeVisible();
       expect(screen.getByRole("tab", { name: "Linux" })).toHaveAttribute(
         "aria-selected",
@@ -1411,7 +1485,7 @@ describe("response command navigation", () => {
         mock.invoke.mock.calls.filter(([command]) => command === "get_view"),
       ).toHaveLength(views);
       expect(
-        screen.getByRole("button", { name: "复制 查看系统版本" }),
+        screen.getByRole("button", { name: "Copy Show OS version" }),
       ).toBeEnabled();
     },
   );
@@ -1421,16 +1495,16 @@ it("preserves combined log dimensions across order changes and pagination", asyn
   const user = userEvent.setup();
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getByRole("button", { name: "日志证据" }));
-  await screen.findByText("中文证据记录");
-  fireEvent.click(screen.getByRole("button", { name: "多维查询" }));
-  fireEvent.change(screen.getByLabelText("Windows 事件 ID"), {
+  fireEvent.click(screen.getByRole("button", { name: "Log evidence" }));
+  await screen.findByText("Synthetic evidence record");
+  fireEvent.click(screen.getByRole("button", { name: "Multi-dim query" }));
+  fireEvent.change(screen.getByLabelText("Windows event IDs"), {
     target: { value: "4624,4625" },
   });
-  fireEvent.change(screen.getByLabelText("日志通道"), {
+  fireEvent.change(screen.getByLabelText("Log channel"), {
     target: { value: "Security" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "应用查询" }));
+  fireEvent.click(screen.getByRole("button", { name: "Apply query" }));
   await waitFor(() =>
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
   );
@@ -1447,8 +1521,10 @@ it("preserves combined log dimensions across order changes and pagination", asyn
       }),
     }),
   });
-  await user.click(screen.getByRole("combobox", { name: "日志排列顺序" }));
-  await user.click(screen.getByRole("option", { name: "时间倒序（新→旧）" }));
+  await user.click(screen.getByRole("combobox", { name: "Log order" }));
+  await user.click(
+    screen.getByRole("option", { name: "Time descending (new → old)" }),
+  );
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith("get_view", {
       request: expect.objectContaining({
@@ -1457,9 +1533,9 @@ it("preserves combined log dimensions across order changes and pagination", asyn
     }),
   );
   await waitFor(() =>
-    expect(screen.getByRole("button", { name: "下一页" })).toBeEnabled(),
+    expect(screen.getByRole("button", { name: "Next page" })).toBeEnabled(),
   );
-  fireEvent.click(screen.getByRole("button", { name: "下一页" }));
+  fireEvent.click(screen.getByRole("button", { name: "Next page" }));
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith("get_view", {
       request: expect.objectContaining({
@@ -1485,7 +1561,7 @@ it("restores legacy log filters with defaults for new query dimensions", async (
           ...boot,
           filters: {
             logs: {
-              text: "旧筛选",
+              text: "legacy filter",
               regex: false,
               suspicious: false,
               source: null,
@@ -1507,14 +1583,14 @@ it("restores legacy log filters with defaults for new query dimensions", async (
   );
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getByRole("button", { name: "日志证据" }));
-  await screen.findByText("中文证据记录");
-  expect(screen.getByLabelText("查询证据")).toHaveValue("旧筛选");
-  expect(
-    screen.getByRole("combobox", { name: "日志排列顺序" }),
-  ).toHaveTextContent("原始正序");
-  fireEvent.click(screen.getByRole("button", { name: "多维查询" }));
-  expect(screen.getByLabelText("Windows 事件 ID")).toHaveValue("");
+  fireEvent.click(screen.getByRole("button", { name: "Log evidence" }));
+  await screen.findByText("Synthetic evidence record");
+  expect(screen.getByLabelText("Query evidence")).toHaveValue("legacy filter");
+  expect(screen.getByRole("combobox", { name: "Log order" })).toHaveTextContent(
+    "Original order (forward)",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Multi-dim query" }));
+  expect(screen.getByLabelText("Windows event IDs")).toHaveValue("");
 });
 
 it("cancels a pending multidimensional query and ignores its late result", async () => {
@@ -1532,20 +1608,20 @@ it("cancels a pending multidimensional query and ignores its late result", async
   });
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getByRole("button", { name: "日志证据" }));
-  await screen.findByText("中文证据记录");
-  fireEvent.click(screen.getByRole("button", { name: "多维查询" }));
-  fireEvent.change(screen.getByLabelText("Windows 事件 ID"), {
+  fireEvent.click(screen.getByRole("button", { name: "Log evidence" }));
+  await screen.findByText("Synthetic evidence record");
+  fireEvent.click(screen.getByRole("button", { name: "Multi-dim query" }));
+  fireEvent.change(screen.getByLabelText("Windows event IDs"), {
     target: { value: "4624" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "应用查询" }));
-  fireEvent.click(await screen.findByRole("button", { name: "取消查询" }));
+  fireEvent.click(screen.getByRole("button", { name: "Apply query" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Cancel query" }));
   await waitFor(() =>
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
   );
   await act(async () => complete());
-  expect(screen.getByRole("button", { name: "多维查询" })).toBeVisible();
-  expect(screen.getByText("中文证据记录")).toBeVisible();
+  expect(screen.getByRole("button", { name: "Multi-dim query" })).toBeVisible();
+  expect(screen.getByText("Synthetic evidence record")).toBeVisible();
   const requests = mock.invoke.mock.calls.filter(
     ([command]) => command === "get_view",
   );
@@ -1557,7 +1633,7 @@ it("loads finding details on demand and ignores replies for a previous selection
     id,
     origin: "local:synthetic",
     severity: "low" as const,
-    title: `合成发现 ${id}`,
+    title: `Synthetic finding ${id}`,
     description: "",
     evidence_ids: [] as string[],
     confidence: 0.5,
@@ -1583,15 +1659,15 @@ it("loads finding details on demand and ignores replies for a previous selection
   });
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getByRole("button", { name: "分析概览" }));
-  fireEvent.click(await screen.findByText("合成发现 A"));
+  fireEvent.click(screen.getByRole("button", { name: "Analysis overview" }));
+  fireEvent.click(await screen.findByText("Synthetic finding A"));
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith("get_finding", {
       sessionId: 7,
       id: "A",
     }),
   );
-  fireEvent.click(screen.getByText("合成发现 B"));
+  fireEvent.click(screen.getByText("Synthetic finding B"));
   await waitFor(() =>
     expect(mock.invoke).toHaveBeenCalledWith("get_finding", {
       sessionId: 7,
@@ -1602,11 +1678,11 @@ it("loads finding details on demand and ignores replies for a previous selection
     pending.B({
       ...b,
       table_preview: false,
-      description: "完整说明乙",
+      description: "full description B",
       evidence_ids: ["evidence-b"],
     }),
   );
-  await screen.findByText("完整说明乙");
+  await screen.findByText("full description B");
   expect(
     await screen.findByRole("button", { name: "evidence-b" }),
   ).toBeVisible();
@@ -1614,11 +1690,11 @@ it("loads finding details on demand and ignores replies for a previous selection
     pending.A({
       ...a,
       table_preview: false,
-      description: "过期说明甲",
+      description: "stale description A",
       evidence_ids: ["evidence-a"],
     }),
   );
-  expect(screen.queryByText("过期说明甲")).not.toBeInTheDocument();
+  expect(screen.queryByText("stale description A")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "evidence-b" })).toBeVisible();
 });
 
@@ -1638,7 +1714,7 @@ it("keeps parsed log summaries visible when list fields are compacted", async ()
                 kind: "log",
                 fields: { category: "auth_text", fields: {} },
               },
-              summary: "账号=合成用户 · 来源=192.0.2.10",
+              summary: "user=synthetic user · source=192.0.2.10",
             },
           ],
         },
@@ -1647,8 +1723,8 @@ it("keeps parsed log summaries visible when list fields are compacted", async ()
   });
   render(<App />);
   await waitFor(() => expect(mock.window.onCloseRequested).toHaveBeenCalled());
-  fireEvent.click(screen.getByRole("button", { name: "日志证据" }));
+  fireEvent.click(screen.getByRole("button", { name: "Log evidence" }));
   expect(
-    await screen.findByText("账号=合成用户 · 来源=192.0.2.10"),
+    await screen.findByText("user=synthetic user · source=192.0.2.10"),
   ).toBeVisible();
 });

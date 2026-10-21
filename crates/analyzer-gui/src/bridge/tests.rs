@@ -176,7 +176,7 @@ fn benchmark_large_project_pagination() {
 #[ignore = "synthetic 10000-process and 10000-packet module benchmark"]
 fn benchmark_synthetic_modules() {
     let ctx = ExecutionContext::default();
-    let session = ProjectService::create(ProjectInfo::new("合成模块性能验证", "合成客户")).unwrap();
+    let session = ProjectService::create(ProjectInfo::new("Synthetic module performance", "Synthetic client")).unwrap();
     let processes = (0..10000).map(|i| serde_json::json!({"pid":i,"parent_pid":if i==0 {None} else {Some((i-1)/2)},"name":format!("synthetic-process-{i}"),"command":[]})).collect::<Vec<_>>();
     let fixture =
         fs::read(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/sample.pcap"))
@@ -492,8 +492,8 @@ fn ai_preview_rejects_changed_settings_payload_selection_or_session() {
 }
 #[test]
 fn database_project_pages_notes_and_stale_views_are_isolated() {
-    let first = ProjectService::create(ProjectInfo::new("合成甲响应", "合成甲客户")).unwrap();
-    let second = ProjectService::create(ProjectInfo::new("合成乙响应", "合成乙客户")).unwrap();
+    let first = ProjectService::create(ProjectInfo::new("Synthetic A response", "Synthetic A client")).unwrap();
+    let second = ProjectService::create(ProjectInfo::new("Synthetic B response", "Synthetic B client")).unwrap();
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures");
     ProjectService::append(
         &first,
@@ -517,7 +517,7 @@ fn database_project_pages_notes_and_stale_views_are_isolated() {
     assert!(!selection.unwrap().is_empty());
     assert!(view.records.as_ref().unwrap().total > 0);
     let id = view.records.unwrap().items[0].id.clone();
-    ProjectService::note(&first, &id, "合成备注", &ExecutionContext::default()).unwrap();
+    ProjectService::note(&first, &id, "Synthetic note", &ExecutionContext::default()).unwrap();
     assert!(ProjectService::read_note(&second, &id).unwrap().is_none());
     let desktop = Desktop::new(PathBuf::new(), Args::default());
     {
@@ -545,7 +545,7 @@ fn database_project_pages_notes_and_stale_views_are_isolated() {
 
 #[test]
 fn log_time_and_field_filters_are_global_and_preserved_across_pages() {
-    let session = ProjectService::create(ProjectInfo::new("日志查询验证", "合成客户")).unwrap();
+    let session = ProjectService::create(ProjectInfo::new("Log query validation", "Synthetic client")).unwrap();
     let text = (0..125).map(|i| format!("2026-10-14T00:{:02}:{:02}Z host sshd: Accepted password for synthetic from 192.0.2.10 port 22 ssh2", i / 60, i % 60)).collect::<Vec<_>>().join("\n");
     ProjectService::append(
         &session,

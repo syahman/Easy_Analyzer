@@ -66,18 +66,18 @@ fn run(cli: Cli, cancellation: CancellationToken) -> Result<bool> {
                 ConfigCommand::Init => {
                     ConfigService::create(&config_path)?;
                     println!(
-                        "已创建配置 {}\n默认使用 DeepSeek deepseek-flash，请在配置文件中填写 api_key；其他服务可修改 base_url/model。",
+                        "Created configuration {}\nDeepSeek deepseek-flash is the default; fill in api_key in the configuration file; other services can change base_url/model.",
                         config_path.display()
                     );
                 }
                 ConfigCommand::Show => println!(
-                    "配置文件：{}\n{}",
+                    "Config file: {}\n{}",
                     config_path.display(),
                     ConfigService::redacted(&ConfigService::load(&config_path)?)?
                 ),
                 ConfigCommand::Check => {
                     ConfigService::check(&ConfigService::load(&config_path)?)?;
-                    println!("AI 连接与 JSON 响应校验成功。");
+                    println!("AI connection and JSON response validation succeeded.");
                 }
             }
             return Ok(true);
@@ -86,12 +86,12 @@ fn run(cli: Cli, cancellation: CancellationToken) -> Result<bool> {
     let max_file_bytes = args
         .max_file_mb
         .checked_mul(1024 * 1024)
-        .context("文件大小上限超出可表示范围")?;
+        .context("File size limit exceeds the representable range")?;
     if args.files.iter().filter(|p| p.as_os_str() == "-").count() > 1 {
-        bail!("标准输入（-）只能指定一次");
+        bail!("Standard input (-) can only be given once");
     }
     if args.ioc_stdin && args.files.iter().any(|p| p.as_os_str() == "-") {
-        bail!("IOC 和证据不能同时使用标准输入");
+        bail!("IOC and evidence cannot both use standard input");
     }
     let has_ioc = !args.ioc.is_empty() || !args.ioc_value.is_empty() || args.ioc_stdin;
     let project_session = if let Some(path) = &args.project {
@@ -105,12 +105,12 @@ fn run(cli: Cli, cancellation: CancellationToken) -> Result<bool> {
         let name = if args.save_project.is_some() {
             args.project_name.as_deref().unwrap_or_default()
         } else {
-            "临时分析"
+            "Ad-hoc analysis"
         };
         let client = if args.save_project.is_some() {
-            args.client.as_deref().context("保存新项目需要 --client")?
+            args.client.as_deref().context("--client is required when saving a new project")?
         } else {
-            "临时会话"
+            "Ad-hoc session"
         };
         let mut info = analyzer_app::ProjectInfo::new(name, client);
         if let Some(start) = &args.response_start {
@@ -263,7 +263,7 @@ fn run(cli: Cli, cancellation: CancellationToken) -> Result<bool> {
         if !sources.is_empty() {
             let imported = analyzer_app::IocService::import(&session, &sources, &ctx)?;
             for issue in imported.issues {
-                eprintln!("IOC 第 {} 行：{}", issue.line, issue.message);
+                eprintln!("IOC line {}: {}", issue.line, issue.message);
             }
         }
         if has_ioc {
@@ -294,7 +294,7 @@ fn run(cli: Cli, cancellation: CancellationToken) -> Result<bool> {
             };
             analyzer_app::ProjectService::save(&session, path, &config_path, false, &save_ctx)?;
             projects::catalog()?.register(&session)?;
-            eprintln!("项目已保存：{}", path.display());
+            eprintln!("Project saved: {}", path.display());
         }
         outcome
     } else {
@@ -325,7 +325,7 @@ fn run(cli: Cli, cancellation: CancellationToken) -> Result<bool> {
         export.save(&outcome.session, &config_path)?
     };
     for path in &exported.saved_paths {
-        eprintln!("报告已保存：{}", path.display());
+        eprintln!("Report saved: {}", path.display());
     }
     if let Some(output) = exported.stdout {
         let mut stdout = io::stdout().lock();
@@ -335,9 +335,9 @@ fn run(cli: Cli, cancellation: CancellationToken) -> Result<bool> {
     let success = outcome.status == TaskStatus::Completed;
     if !success {
         if export.format == OutputFormat::Text && export.path.is_none() {
-            eprintln!("分析部分完成，错误原因见上方诊断。");
+            eprintln!("Analysis partially completed; see the diagnostics above for the reason.");
         } else {
-            eprintln!("分析部分完成，具体原因：");
+            eprintln!("Analysis partially completed; specific reasons:");
             let diagnostics = outcome
                 .session
                 .diagnostic_page(0, args.limit.clamp(1, 1000))?;
@@ -346,9 +346,9 @@ fn run(cli: Cli, cancellation: CancellationToken) -> Result<bool> {
                 .iter()
                 .filter(|d| d.level == DiagnosticLevel::Error)
             {
-                eprintln!("  {}：{}", diagnostic.source, diagnostic.message);
+                eprintln!("  {}: {}", diagnostic.source, diagnostic.message);
             }
-            eprintln!("完整原因见报告中的诊断信息。");
+            eprintln!("See the diagnostics in the report for the complete reasons.");
         }
     }
     Ok(success)
@@ -366,14 +366,14 @@ fn main() -> ExitCode {
     let token = CancellationToken::default();
     let signal_token = token.clone();
     if let Err(error) = ctrlc::set_handler(move || signal_token.cancel()) {
-        eprintln!("错误：无法安装取消处理：{error}");
+        eprintln!("Error: failed to install the cancellation handler: {error}");
         return ExitCode::FAILURE;
     }
     match run(cli, token) {
         Ok(true) => ExitCode::SUCCESS,
         Ok(false) => ExitCode::FAILURE,
         Err(error) => {
-            eprintln!("错误：{error:#}");
+            eprintln!("Error: {error:#}");
             ExitCode::FAILURE
         }
     }

@@ -101,9 +101,9 @@ impl Server {
                 let value: serde_json::Value =
                     serde_json::from_slice(&bytes[body_offset..]).unwrap();
                 let user = value["messages"][1]["content"].as_str().unwrap();
-                let summary = user.starts_with("阶段：跨批汇总");
+                let summary = user.starts_with("Phase: cross-batch synthesis, round ");
                 let evidence_batch = user.lines().find_map(|line| {
-                    line.strip_prefix("当前批次 batch: ")
+                    line.strip_prefix("Current batch (batch): ")
                         .and_then(|n| n.parse::<usize>().ok())
                 });
                 if summary {
@@ -134,7 +134,7 @@ impl Server {
                 } else {
                     vec![
                         user.lines()
-                            .find_map(|line| line.strip_prefix("证据编号: "))
+                            .find_map(|line| line.strip_prefix("Evidence ID: "))
                             .unwrap()
                             .to_owned(),
                     ]
@@ -286,7 +286,7 @@ fn ai_scopes_reuse_evidence_and_keep_unique_findings() {
     let requests = server.requests.lock().unwrap();
     assert_eq!(requests.len(), 3);
     let user = requests[0]["messages"][1]["content"].as_str().unwrap();
-    assert_eq!(user.matches("证据编号: ").count(), 1);
+    assert_eq!(user.matches("Evidence ID: ").count(), 1);
     assert!(user.contains(&selection.ids()[0]));
 }
 
@@ -339,7 +339,7 @@ fn pcap_ai_payload_policy_is_unchanged() {
         requests[1]["messages"][1]["content"]
             .as_str()
             .unwrap()
-            .contains("原始包十六进制")
+            .contains("Raw packet hex")
     );
 }
 
@@ -387,7 +387,7 @@ fn in_flight_cancel_retains_response_and_stops_later_batches() {
             assert!(run.batch_results[0].attempts[0].response.is_some());
             assert!(!run.is_complete());
             assert!(r.findings.iter().any(|f| f.origin == "ai:mock"));
-            assert!(r.diagnostics.iter().any(|d| d.message.contains("已取消")));
+            assert!(r.diagnostics.iter().any(|d| d.message.contains("cancelled")));
         })
         .unwrap();
 }
@@ -530,7 +530,7 @@ fn local_preview_single_request_ignores_legacy_byte_limit_and_freezes_scope() {
         captured[0]["messages"][1]["content"]
             .as_str()
             .unwrap()
-            .matches("证据编号: ")
+            .matches("Evidence ID: ")
             .count(),
         1
     );
@@ -583,7 +583,7 @@ fn context_batches_synthesize_validated_cross_batch_references_without_double_co
         requests.last().unwrap()["messages"][1]["content"]
             .as_str()
             .unwrap()
-            .starts_with("阶段：跨批汇总")
+            .starts_with("Phase: cross-batch synthesis, round ")
     );
 }
 
@@ -623,13 +623,13 @@ fn failed_summary_retains_all_evidence_batch_results_and_raw_replies() {
             assert!(
                 r.diagnostics
                     .iter()
-                    .any(|d| d.message.contains("跨批汇总未完成"))
+                    .any(|d| d.message.contains("Cross-batch synthesis incomplete"))
             );
             assert!(r.findings.iter().any(|f| f.origin.starts_with("ai:")));
             assert!(
                 r.diagnostics
                     .iter()
-                    .any(|d| d.source == "AI 本地整理" && d.message.contains("mock finding"))
+                    .any(|d| d.source == "AI local recap" && d.message.contains("mock finding"))
             );
         })
         .unwrap();
@@ -679,7 +679,7 @@ fn failed_evidence_batch_continues_and_summarizes_only_accepted_replies() {
             assert!(
                 r.diagnostics
                     .iter()
-                    .any(|d| d.source == "AI 本地整理" && d.message.contains("失败证据批次：2"))
+                    .any(|d| d.source == "AI local recap" && d.message.contains("Failed evidence batches: 2"))
             );
         })
         .unwrap();
@@ -687,8 +687,8 @@ fn failed_evidence_batch_continues_and_summarizes_only_accepted_replies() {
     let user = requests.last().unwrap()["messages"][1]["content"]
         .as_str()
         .unwrap();
-    assert!(user.contains("失败证据批次：2"));
-    assert!(user.contains("缺失范围不能视为正常"));
+    assert!(user.contains("Failed evidence batches: 2"));
+    assert!(user.contains("missing scope must not be treated as normal"));
 }
 
 #[test]
@@ -715,17 +715,17 @@ fn http400_summary_creates_exportable_local_recap_without_extra_requests() {
             let recap = r
                 .diagnostics
                 .iter()
-                .find(|d| d.source == "AI 本地整理")
+                .find(|d| d.source == "AI local recap")
                 .unwrap();
             assert_eq!(recap.position.as_deref(), Some("ai-run:1"));
-            assert!(recap.message.contains("不是新的 AI 关联推理"));
+            assert!(recap.message.contains("not new AI correlation reasoning"));
             assert!(recap.message.contains(&format!(
-                "请求阶段成功 {}/{}，失败 1，未执行 0",
+                "Request phase succeeded {}/{}, with 1 failed and 0 not executed",
                 batches,
                 batches + 1
             )));
             assert!(recap.message.contains("mock finding"));
-            assert!(!r.findings.iter().any(|f| f.title.contains("本地结果整理")));
+            assert!(!r.findings.iter().any(|f| f.title.contains("Local result recap")));
         })
         .unwrap();
     let dir = tempfile::tempdir().unwrap();
@@ -736,11 +736,11 @@ fn http400_summary_creates_exportable_local_recap_without_extra_requests() {
     }
     .save(&session, &dir.path().join("config.toml"))
     .unwrap();
-    assert!(paths.stdout.unwrap().contains("AI 本地整理"));
+    assert!(paths.stdout.unwrap().contains("AI local recap"));
     assert!(
         std::fs::read_to_string(dir.path().join("report.html"))
             .unwrap()
-            .contains("本地结果整理")
+            .contains("Local result recap")
     );
 }
 
@@ -780,7 +780,7 @@ fn failed_summary_group_does_not_stop_other_groups_or_discard_accepted_input() {
                     .all(|id| last.evidence_ids.contains(id))
             );
             assert!(r.findings.iter().any(|f| f.title == "cross-batch finding"));
-            assert!(r.diagnostics.iter().any(|d| d.source == "AI 本地整理"));
+            assert!(r.diagnostics.iter().any(|d| d.source == "AI local recap"));
         })
         .unwrap();
 }
@@ -821,7 +821,7 @@ fn no_successful_evidence_produces_no_fabricated_content_or_summary_request() {
             assert!(
                 r.diagnostics
                     .iter()
-                    .any(|d| d.source == "AI 本地整理" && d.message.contains("无法形成内容总结"))
+                    .any(|d| d.source == "AI local recap" && d.message.contains("a content summary cannot be formed"))
             );
         })
         .unwrap();
@@ -919,7 +919,7 @@ fn hierarchical_summary_reports_current_batch_and_total_for_each_round() {
     }
     assert!(rounds.len() >= 2);
     for (round, events) in rounds {
-        assert!(round.starts_with("跨批汇总（第 "));
+        assert!(round.starts_with("Cross-batch synthesis (round "));
         let total = events[0].1;
         assert_eq!(events, (1..=total).map(|i| (i, total)).collect::<Vec<_>>());
     }

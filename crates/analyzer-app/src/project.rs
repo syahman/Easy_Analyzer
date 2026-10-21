@@ -52,16 +52,16 @@ impl ProjectInfo {
         }
     }
     pub fn validate(&self) -> Result<()> {
-        Uuid::parse_str(&self.id).context("无效的项目 UUID")?;
+        Uuid::parse_str(&self.id).context("Invalid project UUID")?;
         if self.name.trim().is_empty() || self.client.trim().is_empty() {
-            bail!("项目名称和客户单位为必填项");
+            bail!("The project name and client organization are required");
         }
         let start = DateTime::parse_from_rfc3339(&self.response_start)
-            .context("响应开始时间必须包含日期、时间和时区")?;
+            .context("The response start time must include a date, time, and time zone")?;
         if let Some(end) = &self.response_end
-            && DateTime::parse_from_rfc3339(end).context("响应结束时间格式不正确")? < start
+            && DateTime::parse_from_rfc3339(end).context("The response end time format is invalid")? < start
         {
-            bail!("响应结束时间不能早于开始时间");
+            bail!("The response end time cannot be earlier than the start time");
         }
         DateTime::parse_from_rfc3339(&self.created_at)?;
         DateTime::parse_from_rfc3339(&self.updated_at)?;
@@ -106,7 +106,7 @@ fn db(session: &AnalysisSession) -> Result<&Arc<Database>> {
         .0
         .store
         .as_ref()
-        .ok_or_else(|| anyhow!("当前会话不是应急响应项目"))
+        .ok_or_else(|| anyhow!("The current session is not an incident response project"))
 }
 pub(crate) fn touch(c: &Connection) -> Result<()> {
     touch_revision(c, true)
@@ -150,13 +150,13 @@ fn copy(source: &Connection, target: &mut Connection, ctx: &ExecutionContext) ->
                 let p = backup.progress();
                 ctx.emit(
                     core::execution::Stage::Finalizing,
-                    Some("项目数据库"),
+                    Some("Project database"),
                     (p.pagecount - p.remaining) as usize,
                     Some(p.pagecount as usize),
                 );
             }
-            StepResult::Busy | StepResult::Locked => bail!("项目数据库被其他程序占用，请稍后重试"),
-            _ => bail!("数据库备份未完成"),
+            StepResult::Busy | StepResult::Locked => bail!("The project database is held by another program; try again later"),
+            _ => bail!("The database backup did not finish"),
         }
     }
     Ok(())
@@ -183,7 +183,7 @@ fn clone_snapshot(
     let original = file.metadata()?;
     let current = fs::metadata(path)?;
     if original.dev() != current.dev() || original.ino() != current.ino() {
-        bail!("项目文件在打开期间已被替换，请重试");
+        bail!("The project file was replaced while it was open; try again");
     }
     let target = CString::new(target.as_os_str().as_bytes())?;
     // SAFETY: file owns a live descriptor; target is a valid NUL-terminated path.
@@ -195,10 +195,10 @@ fn validate_file(c: &Connection, ctx: &ExecutionContext) -> Result<ProjectInfo> 
     crate::log_query::register(c)?;
     c.execute_batch("PRAGMA trusted_schema=OFF;")?;
     if c.pragma_query_value(None, "application_id", |r| r.get::<_, i32>(0))? != APP_ID {
-        bail!("这不是 Easy Analyzer 项目文件");
+        bail!("This is not an Easy Analyzer project file");
     }
     if c.pragma_query_value(None, "user_version", |r| r.get::<_, i32>(0))? != VERSION {
-        bail!("不支持该项目文件版本");
+        bail!("This project file version is not supported");
     }
     if c.query_row(
         "SELECT COUNT(*) FROM sqlite_schema WHERE type IN ('trigger','view')",
@@ -206,27 +206,27 @@ fn validate_file(c: &Connection, ctx: &ExecutionContext) -> Result<ProjectInfo> 
         |r| r.get::<_, i64>(0),
     )? != 0
     {
-        bail!("项目包含不支持的数据库结构");
+        bail!("The project contains unsupported database objects");
     }
     let token = ctx.cancellation.clone();
     c.progress_handler(2048, Some(move || token.is_cancelled()))?;
     let checked = (|| -> Result<()> {
         if c.query_row("PRAGMA quick_check", [], |r| r.get::<_, String>(0))? != "ok" {
-            bail!("项目数据库损坏");
+            bail!("The project database is corrupt");
         }
         if c.prepare("PRAGMA foreign_key_check")?
             .query([])?
             .next()?
             .is_some()
         {
-            bail!("项目存在无效证据引用");
+            bail!("The project has invalid evidence references");
         }
         if !c.query_row(
             "SELECT COUNT(*)=COALESCE(MAX(ordinal),0) AND COALESCE(MIN(ordinal),1)=1 FROM records",
             [],
             |r| r.get::<_, bool>(0),
         )? {
-            bail!("项目记录序号不连续");
+            bail!("Project record ordinals are not contiguous");
         }
         for table in [
             "sources",
@@ -265,20 +265,20 @@ fn validate_file(c: &Connection, ctx: &ExecutionContext) -> Result<ProjectInfo> 
             .collect::<rusqlite::Result<_>>()?)
     };
     if structure(c)? != structure(&expected)? {
-        bail!("项目表结构或索引不符合 schema 版本");
+        bail!("Project tables or indexes do not match the schema version");
     }
     let invalid_ai = crate::storage::with_progress(c, ctx, || {
         Ok(c.query_row("SELECT EXISTS(SELECT 1 FROM ai_batches b,json_each(eair_text(b.json),'$.evidence_ids') e LEFT JOIN records r ON r.id=e.value WHERE r.id IS NULL)",[],|r|r.get::<_,bool>(0))?)
     })?;
     if invalid_ai {
-        bail!("AI 历史引用不存在的证据");
+        bail!("The AI history references missing evidence");
     }
     let info: ProjectInfo = Database::get(c, "project")?;
     info.validate()?;
     let _: u64 = Database::get(c, "revision")?;
     let report: AnalysisReport = Database::get(c, "report")?;
     if report.schema_version != core::SCHEMA_VERSION {
-        bail!("不支持项目内的报告版本");
+        bail!("The report version inside the project is not supported");
     }
     Ok(info)
 }
@@ -304,18 +304,18 @@ impl ProjectService {
     pub fn open(path: &Path, ctx: &ExecutionContext) -> Result<AnalysisSession> {
         ctx.check()?;
         #[cfg(target_os = "macos")]
-        let file = fs::File::open(path).context("无法打开项目文件")?;
+        let file = fs::File::open(path).context("Unable to open the project file")?;
         let source = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY)
-            .context("无法打开项目文件")?;
+            .context("Unable to open the project file")?;
         let snapshot = source.unchecked_transaction()?;
         ctx.emit(
             core::execution::Stage::Reading,
-            Some("项目完整性校验"),
+            Some("Project integrity check"),
             0,
             None,
         );
         validate_file(&snapshot, ctx)?;
-        ctx.emit(core::execution::Stage::Query, Some("项目统计"), 0, None);
+        ctx.emit(core::execution::Stage::Query, Some("Project statistics"), 0, None);
         // Validation has just read the source pages. Compute once here so the first
         // view does not reread cold APFS clone pages, then cache the same snapshot.
         let overview = crate::storage::with_progress(&snapshot, ctx, || {
@@ -346,7 +346,7 @@ impl ProjectService {
             *store
                 .overview_cache
                 .lock()
-                .map_err(|_| anyhow!("项目统计缓存不可用"))? =
+                .map_err(|_| anyhow!("The project statistics cache is unavailable"))? =
                 Some((content_revision(&c)?, overview));
             Database::set(&c, "saved_revision", &Some(rev))?;
             Database::set(
@@ -381,7 +381,7 @@ impl ProjectService {
         let c = &tx;
         let old: ProjectInfo = Database::get(c, "project")?;
         if old.id != info.id {
-            bail!("不能修改项目 UUID");
+            bail!("The project UUID cannot be changed");
         }
         info.created_at = old.created_at;
         Database::set(c, "project", &info)?;
@@ -404,7 +404,7 @@ impl ProjectService {
             [record],
             |r| r.get::<_, bool>(0),
         )? {
-            bail!("证据编号不属于当前项目");
+            bail!("Evidence ID does not belong to the current project");
         }
         if text.trim().is_empty() {
             c.execute("DELETE FROM notes WHERE record_id=?1", [record])?;
@@ -532,9 +532,9 @@ impl ProjectService {
                     "INSERT INTO diagnostics(json) VALUES(?1)",
                     [crate::storage::packed_json(&core::Diagnostic {
                         level: DiagnosticLevel::Error,
-                        source: "项目导入".into(),
+                        source: "Project import".into(),
                         position: None,
-                        message: "导入已取消；保留已校验的证据，当前导入范围未完成。".into(),
+                        message: "Import cancelled; validated evidence is retained; the current import scope is incomplete.".into(),
                     })?],
                 )?;
             }
@@ -578,15 +578,15 @@ impl ProjectService {
                 let rev: u64 = Database::get(&c, "revision")?;
                 let saved: Option<u64> = Database::get(&*store.lock()?, "saved_revision")?;
                 if info.id != status.info.id || Some(rev) != saved {
-                    bail!("项目已被其他程序修改，请重新打开或另存为");
+                    bail!("The project was modified by another program; reopen it or use Save As");
                 }
             } else if !overwrite {
-                bail!("目标文件已存在，请使用另存为或明确允许覆盖");
+                bail!("The target file already exists; use Save As or explicitly allow overwriting");
             }
         }
         let parent = target
             .parent()
-            .ok_or_else(|| anyhow!("项目保存目录不可用"))?;
+            .ok_or_else(|| anyhow!("The project save directory is unavailable"))?;
         fs::create_dir_all(parent)?;
         let temporary = tempfile::NamedTempFile::new_in(parent)?;
         {
@@ -606,7 +606,7 @@ impl ProjectService {
         temporary
             .persist(&target)
             .map_err(|e| e.error)
-            .context("无法保存项目；原文件保留")?;
+            .context("Unable to save the project; the original file is kept")?;
         {
             let c = store.lock()?;
             Database::set(&c, "saved_revision", &Some(status.revision))?;
@@ -621,11 +621,11 @@ pub fn project_data_dir() -> Result<PathBuf> {
         return Ok(root.into());
     }
     let home = std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" })
-        .ok_or_else(|| anyhow!("用户目录不可用"))?;
+        .ok_or_else(|| anyhow!("The user home directory is unavailable"))?;
     Ok(if cfg!(target_os = "macos") {
         PathBuf::from(home).join("Library/Application Support/com.easyanalyzer.gui")
     } else if cfg!(windows) {
-        PathBuf::from(std::env::var_os("APPDATA").ok_or_else(|| anyhow!("APPDATA 不可用"))?)
+        PathBuf::from(std::env::var_os("APPDATA").ok_or_else(|| anyhow!("The APPDATA environment variable is unavailable"))?)
             .join("com.easyanalyzer.gui")
     } else {
         std::env::var_os("XDG_DATA_HOME")
@@ -663,25 +663,25 @@ impl ProjectCatalog {
             let c = self
                 .connection
                 .lock()
-                .map_err(|_| anyhow!("项目目录不可用"))?;
+                .map_err(|_| anyhow!("The project catalog is unavailable"))?;
             c.execute("INSERT INTO projects VALUES(?1,?2,?3,?4) ON CONFLICT(id) DO UPDATE SET path=excluded.path,json=excluded.json,last_opened=excluded.last_opened",params![status.info.id,path,json(&status.info)?,chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Nanos,true)])?;
         }
         Ok(())
     }
     /// Remove only the catalog entry. The project file and open session are preserved.
     pub fn remove(&self, id: &str, path: &str) -> Result<()> {
-        Uuid::parse_str(id).context("无效的项目 UUID")?;
+        Uuid::parse_str(id).context("Invalid project UUID")?;
         let c = self
             .connection
             .lock()
-            .map_err(|_| anyhow!("项目目录不可用"))?;
+            .map_err(|_| anyhow!("The project catalog is unavailable"))?;
         // Matching the displayed path also protects a project relocated since the list was read.
         if c.execute(
             "DELETE FROM projects WHERE id=?1 AND path=?2",
             params![id, path],
         )? == 0
         {
-            bail!("项目列表已更新，请刷新后重试");
+            bail!("The project list has changed; refresh and try again");
         }
         Ok(())
     }
@@ -703,12 +703,12 @@ impl ProjectCatalog {
             .map(|s| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d"))
             .transpose()?;
         if from.zip(until).is_some_and(|(a, b)| a > b) {
-            bail!("开始日期不得晚于结束日期");
+            bail!("The start date cannot be later than the end date");
         }
         let c = self
             .connection
             .lock()
-            .map_err(|_| anyhow!("项目目录不可用"))?;
+            .map_err(|_| anyhow!("The project catalog is unavailable"))?;
         let condition = "(instr(catalog_lower(json_extract(json,'$.name')),?1)>0 OR instr(catalog_lower(json_extract(json,'$.client')),?1)>0) AND instr(catalog_lower(json_extract(json,'$.client')),?2)>0 AND (?3 IS NULL OR substr(json_extract(json,'$.response_start'),1,10)>=?3) AND (?4 IS NULL OR substr(json_extract(json,'$.response_start'),1,10)<=?4)";
         let text = search.text.to_lowercase();
         let client = search.client.to_lowercase();
@@ -755,12 +755,12 @@ impl ProjectCatalog {
             .map(|s| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d"))
             .transpose()?;
         if from.zip(until).is_some_and(|(f, u)| f > u) {
-            bail!("开始日期不得晚于结束日期");
+            bail!("The start date cannot be later than the end date");
         }
         let c = self
             .connection
             .lock()
-            .map_err(|_| anyhow!("项目目录不可用"))?;
+            .map_err(|_| anyhow!("The project catalog is unavailable"))?;
         let mut stmt =
             c.prepare("SELECT path,json,last_opened FROM projects ORDER BY last_opened DESC,id")?;
         let mut rows = stmt.query([])?;
@@ -808,7 +808,7 @@ mod pagination_tests {
         let dir = tempfile::tempdir().unwrap();
         let catalog = ProjectCatalog::open(dir.path()).unwrap();
         for i in 0..125 {
-            let info = ProjectInfo::new(format!("合成项目{i:03}"), "ÖCLIENT 单位");
+            let info = ProjectInfo::new(format!("Synthetic project {i:03}"), "ÖCLIENT organization");
             let c = catalog.connection.lock().unwrap();
             c.execute(
                 "INSERT INTO projects VALUES(?1,?2,?3,?4)",

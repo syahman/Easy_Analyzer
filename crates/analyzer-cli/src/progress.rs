@@ -32,16 +32,16 @@ impl AiProgress {
             .spawn(move || {
                 let frames = ['|', '/', '-', '\\'];
                 let mut frame = 0;
-                let mut stage = "准备证据".to_owned();
+                let mut stage = "Preparing evidence".to_owned();
                 let mut width: usize = 0;
                 loop {
                     let line = format!(
-                        "{} AI 分析中 | {} | {}s",
+                        "{} AI analysis running | {} | {}s",
                         frames[frame % frames.len()],
                         stage,
                         started.elapsed().as_secs()
                     );
-                    // Output contains only ASCII and Chinese, whose cell widths are 1 and 2.
+                    // The output is ASCII only, so every cell width is 1.
                     let next_width = line
                         .chars()
                         .map(|c| if c.is_ascii() { 1 } else { 2 })
@@ -62,9 +62,9 @@ impl AiProgress {
                     frame += 1;
                     match receiver.recv_timeout(Duration::from_millis(120)) {
                         Ok(Update::Batch(index, total, attempt)) => {
-                            stage = format!("批次 {index}/{total}");
+                            stage = format!("Batch {index}/{total}");
                             if attempt > 1 {
-                                stage.push_str(&format!(" | 重试 {}/2", attempt - 1));
+                                stage.push_str(&format!(" | retry {}/2", attempt - 1));
                             }
                         }
                         Err(RecvTimeoutError::Timeout) => {}
@@ -94,8 +94,8 @@ impl AiProgress {
         self.stop();
         if visible {
             eprintln!(
-                "AI 分析{}（耗时 {} 秒）",
-                if success { "完成" } else { "未完成" },
+                "AI analysis {} (took {} seconds)",
+                if success { "complete" } else { "incomplete" },
                 self.started.elapsed().as_secs()
             );
         }

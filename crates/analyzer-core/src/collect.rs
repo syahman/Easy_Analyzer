@@ -74,7 +74,7 @@ pub fn collect_processes_with_context(ctx: &ExecutionContext) -> Result<ReportOu
             report.warn(
                 &source.path,
                 None,
-                format!("调试权限未启用：{error:#}；仍保留可读取的进程信息。"),
+                format!("debug privilege not enabled: {error:#}; readable process info retained."),
             );
         }
     }
@@ -115,7 +115,7 @@ pub fn collect_processes_with_context(ctx: &ExecutionContext) -> Result<ReportOu
     {
         let (missing_path, missing_command, missing_user) = missing;
         if missing_path + missing_command + missing_user > 0 {
-            report.warn(&source.path, None, format!("已保留进程字段不可读取：路径 {missing_path} 项、命令行 {missing_command} 项、账户 {missing_user} 项。权限限制、受保护进程或进程退出都可能导致缺失；管理员权限不能保证所有字段可读。"));
+            report.warn(&source.path, None, format!("Unreadable process fields retained: path {missing_path} items, command line {missing_command} items, account {missing_user} items. Permission restrictions, protected processes, or process exit can all cause gaps; administrator rights do not guarantee every field is readable."));
         }
     }
     if cancelled {

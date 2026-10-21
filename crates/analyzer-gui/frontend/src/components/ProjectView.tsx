@@ -51,12 +51,12 @@ export function ProjectEditor({
       text,
     ) && !Number.isNaN(Date.parse(text));
   const fields: [keyof ProjectInfo, string, boolean][] = [
-    ["client", "客户单位", true],
-    ["name", "项目名称", false],
-    ["response_start", "响应开始时间（含时区）", true],
-    ["response_end", "响应结束时间（含时区）", false],
-    ["location", "响应地点", false],
-    ["responders", "服务人员", false],
+    ["client", "Client organization", true],
+    ["name", "Project name", false],
+    ["response_start", "Response start (with time zone)", true],
+    ["response_end", "Response end (with time zone)", false],
+    ["location", "Response location", false],
+    ["responders", "Responders", false],
   ];
   const submit = async () => {
     if (busy || pending.current) return;
@@ -64,19 +64,19 @@ export function ProjectEditor({
     const start = value.response_start.trim();
     const end = value.response_end?.trim() || null;
     if (!value.client.trim()) {
-      setError("请填写客户单位");
+      setError("Enter the client organization");
       return;
     }
     if (!validTime(start)) {
-      setError("响应开始时间必须包含日期、时间和时区");
+      setError("Response start must include a date, time, and time zone");
       return;
     }
     if (end && !validTime(end)) {
-      setError("响应结束时间必须包含日期、时间和时区");
+      setError("Response end must include a date, time, and time zone");
       return;
     }
     if (end && Date.parse(end) < Date.parse(start)) {
-      setError("响应结束时间不能早于开始时间");
+      setError("Response end must not be earlier than the start");
       return;
     }
     setError("");
@@ -103,12 +103,16 @@ export function ProjectEditor({
       onOpenChange={(v) => {
         if (!v && !locked) onClose();
       }}
-      title={mode === "edit" ? "编辑项目资料" : "新建应急响应项目"}
+      title={
+        mode === "edit"
+          ? "Edit project details"
+          : "New incident response project"
+      }
       className="project-editor-dialog"
       description={
         mode === "edit"
-          ? "修改项目资料，应用后点击顶部“保存”写入项目文件。"
-          : "同一次响应可以持续多天，并追加多次证据。"
+          ? "Edit the project details, then click Save at the top to write the project file."
+          : "A single response can last several days and accept repeated evidence imports."
       }
     >
       <form
@@ -128,7 +132,7 @@ export function ProjectEditor({
               value={value[key] ?? ""}
               placeholder={
                 key === "name"
-                  ? "默认使用客户单位，可修改"
+                  ? "Defaults to the client organization; editable"
                   : key.includes("response_")
                     ? "2026-10-05T09:00:00+08:00"
                     : ""
@@ -146,7 +150,7 @@ export function ProjectEditor({
           </label>
         ))}
         <label className="full">
-          项目说明
+          Project description
           <textarea
             disabled={locked}
             value={value.description}
@@ -167,15 +171,15 @@ export function ProjectEditor({
             onClick={onClose}
             disabled={locked}
           >
-            取消
+            Cancel
           </Button>
           <Button type="submit" disabled={locked}>
             {submitting && <LoaderCircle size={14} className="spin" />}
             {submitting
-              ? "正在应用…"
+              ? "Applying…"
               : mode === "edit"
-                ? "应用修改"
-                : "确认项目资料"}
+                ? "Apply changes"
+                : "Confirm project details"}
           </Button>
         </div>
       </form>
@@ -298,8 +302,8 @@ export function ProjectHome({
         >
           <div className="project-current-heading">
             <div>
-              <h3 id="project-current-title">当前项目资料</h3>
-              <p>{current.dirty ? "有未保存的修改" : "已保存"}</p>
+              <h3 id="project-current-title">Current project details</h3>
+              <p>{current.dirty ? "Unsaved changes" : "Saved"}</p>
             </div>
             <Button
               variant="secondary"
@@ -307,24 +311,24 @@ export function ProjectHome({
               onClick={onEdit}
             >
               <Pencil size={14} />
-              编辑项目资料
+              Edit project details
             </Button>
           </div>
           <dl className="project-current-fields">
             {(
               [
-                ["项目名称", current.info.name],
-                ["客户单位", current.info.client],
-                ["响应开始时间", current.info.response_start],
-                ["响应结束时间", current.info.response_end],
-                ["响应地点", current.info.location],
-                ["服务人员", current.info.responders],
-                ["项目说明", current.info.description],
+                ["Project name", current.info.name],
+                ["Client organization", current.info.client],
+                ["Response start", current.info.response_start],
+                ["Response end", current.info.response_end],
+                ["Response location", current.info.location],
+                ["Responders", current.info.responders],
+                ["Project description", current.info.description],
               ] as const
             ).map(([label, text]) => (
               <div key={label}>
                 <dt>{label}</dt>
-                <dd>{text || "未填写"}</dd>
+                <dd>{text || "Not provided"}</dd>
               </div>
             ))}
           </dl>
@@ -332,19 +336,22 @@ export function ProjectHome({
       )}
       <section className="project-start" aria-labelledby="project-start-title">
         <div>
-          <h3 id="project-start-title">新建或续办应急响应</h3>
-          <p>点击“新建项目”填写客户单位、响应时间等资料。</p>
+          <h3 id="project-start-title">Start or resume incident response</h3>
+          <p>
+            Click New project to enter the client organization, response times,
+            and other details.
+          </p>
         </div>
         <div className="project-actions">
           <Button disabled={busy || removing} onClick={onNew}>
-            新建项目
+            New project
           </Button>
           <Button
             variant="secondary"
             disabled={busy || removing}
             onClick={onPick}
           >
-            打开项目文件
+            Open project file
           </Button>
         </div>
       </section>
@@ -354,18 +361,23 @@ export function ProjectHome({
         aria-labelledby="project-list-title"
       >
         <div className="project-list-heading">
-          <h3 id="project-list-title">已有项目</h3>
-          <p>按最近打开排序 · {loading ? "正在查询…" : `${total} 个项目`}</p>
+          <h3 id="project-list-title">Existing projects</h3>
+          <p>
+            Sorted by last opened ·{" "}
+            {loading
+              ? "Searching…"
+              : `${total} ${total === 1 ? "project" : "projects"}`}
+          </p>
         </div>
         <details className="project-filters">
-          <summary>筛选已有项目</summary>
-          <p>以下条件用于查找项目列表。</p>
+          <summary>Filter existing projects</summary>
+          <p>The conditions below search the project list.</p>
           <div className="project-search">
             <label>
-              搜索项目名称或客户单位
+              Search project or client names
               <input
-                aria-label="项目搜索"
-                placeholder="输入关键词查找已有项目"
+                aria-label="Project search"
+                placeholder="Enter keywords to find existing projects"
                 value={text}
                 onChange={(e) => {
                   setText(e.target.value);
@@ -374,10 +386,10 @@ export function ProjectHome({
               />
             </label>
             <label>
-              按客户单位筛选
+              Filter by client organization
               <input
                 value={client}
-                placeholder="全部客户单位"
+                placeholder="All client organizations"
                 onChange={(e) => {
                   setClient(e.target.value);
                   setOffset(0);
@@ -385,7 +397,7 @@ export function ProjectHome({
               />
             </label>
             <label>
-              响应开始日期不早于
+              Response start on or after
               <input
                 type="date"
                 value={from}
@@ -396,7 +408,7 @@ export function ProjectHome({
               />
             </label>
             <label>
-              响应开始日期不晚于
+              Response start on or before
               <input
                 type="date"
                 value={until}
@@ -419,7 +431,7 @@ export function ProjectHome({
                 <small>{row.path}</small>
                 {row.missing && (
                   <p className="error-text">
-                    项目文件缺失，请重新打开移动后的文件
+                    Project file missing; reopen it from its new location
                   </p>
                 )}
               </div>
@@ -429,19 +441,19 @@ export function ProjectHome({
                   disabled={busy || removing || row.missing}
                   onClick={() => onOpen(row.path)}
                 >
-                  继续项目
+                  Resume project
                 </Button>
                 <Button
                   variant="ghost"
                   className="project-remove"
                   disabled={busy || removing}
-                  aria-label={`从列表移除 ${row.info.name}`}
+                  aria-label={`Remove ${row.info.name} from the list`}
                   onClick={() => {
                     setRemoveError("");
                     setRemoval(row);
                   }}
                 >
-                  移除
+                  Remove
                 </Button>
               </div>
             </article>
@@ -449,13 +461,13 @@ export function ProjectHome({
           {!rows.length && !loading && (
             <p>
               {text.trim() || client.trim() || from || until
-                ? "没有符合筛选条件的项目，请调整筛选条件。"
-                : "项目列表为空。点击上方“新建项目”开始响应，或打开已有 .eair 文件。"}
+                ? "No projects match the filters; adjust them."
+                : "The project list is empty. Click New project above to start a response, or open an existing .eair file."}
             </p>
           )}
         </div>
         <Pagination
-          label="项目"
+          label="Projects"
           offset={shownOffset}
           total={total}
           limit={limit}
@@ -475,8 +487,8 @@ export function ProjectHome({
         onOpenChange={(v) => {
           if (!v && !removing) setRemoval(null);
         }}
-        title="从列表移除项目"
-        description="只移除本机项目列表记录，保留 .eair 文件、证据和 IOC。重新打开或保存项目后，会再次显示在列表中。"
+        title="Remove project from the list"
+        description="Only the entry in this machine's project list is removed; the .eair file, evidence, and IOCs are kept. Reopening or saving the project shows it here again."
       >
         {removal && (
           <div className="project-removal-details">
@@ -497,14 +509,14 @@ export function ProjectHome({
             disabled={removing}
             onClick={() => setRemoval(null)}
           >
-            取消
+            Cancel
           </Button>
           <Button
             variant="danger"
             disabled={busy || removing}
             onClick={() => void remove()}
           >
-            {removing ? "正在移除…" : "确认移除"}
+            {removing ? "Removing…" : "Confirm removal"}
           </Button>
         </div>
       </Dialog>

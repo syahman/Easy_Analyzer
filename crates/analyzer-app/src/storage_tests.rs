@@ -1,7 +1,7 @@
 use super::*;
 
 fn project() -> AnalysisSession {
-    ProjectService::create(ProjectInfo::new("合成性能验证", "合成客户")).unwrap()
+    ProjectService::create(ProjectInfo::new("Synthetic performance check", "synthetic client")).unwrap()
 }
 fn append(session: &AnalysisSession, label: &str, text: &str) {
     ProjectService::append(
@@ -301,7 +301,7 @@ fn selection_cache_is_bounded_refreshes_and_does_not_retain_closed_projects() {
     let id = session.page(Some(&first), 0, 1).unwrap().items[0]
         .id
         .clone();
-    ProjectService::note(&session, &id, "只更新备注", &ctx).unwrap();
+    ProjectService::note(&session, &id, "note-only update", &ctx).unwrap();
     ProjectService::save_view_state(&session, &serde_json::json!({"offset":100})).unwrap();
     session.overview(&ctx).unwrap();
     assert_eq!(
@@ -477,9 +477,9 @@ fn diagnostic_caches_and_paged_ai_headers_refresh_without_loading_replies() {
             "INSERT INTO diagnostics(json) VALUES(?1)",
             [packed_json(&core::Diagnostic {
                 level: DiagnosticLevel::Error,
-                source: "合成诊断".into(),
+                source: "Synthetic diagnostics".into(),
                 position: None,
-                message: "合成错误诊断".repeat(100),
+                message: "synthetic error diagnostic".repeat(100),
             })
             .unwrap()],
         )

@@ -83,7 +83,7 @@ pub trait ReportCursor {
     ) -> Result<()>;
 }
 fn summary(s: &Statistics) -> serde_json::Value {
-    serde_json::json!({"sources":s.sources,"records":s.records,"findings":s.findings,"local_findings":s.local_findings,"ai_findings":s.ai_findings,"findings_by_severity":{"critical":s.risks[4],"high":s.risks[3],"medium":s.risks[2],"low":s.risks[1],"info":s.risks[0]},"risk_summary":format!("严重 {} | 高危 {} | 中危 {} | 低危 {} | 信息 {}",s.risks[4],s.risks[3],s.risks[2],s.risks[1],s.risks[0]),"unique_referenced_records":s.referenced,"flows":s.flows,"diagnostics":{"errors":s.errors,"warnings":s.warnings},"query_matches":s.query_matches,"priority_findings":s.priorities,"ai_coverage":s.ai_runs.iter().map(|r|serde_json::json!({"model":r.model,"complete":r.is_complete(),"completed_batches":r.completed(),"total_batches":r.batches,"analyzed_records":r.analyzed_records,"selected_records":r.selected()})).collect::<Vec<_>>()})
+    serde_json::json!({"sources":s.sources,"records":s.records,"findings":s.findings,"local_findings":s.local_findings,"ai_findings":s.ai_findings,"findings_by_severity":{"critical":s.risks[4],"high":s.risks[3],"medium":s.risks[2],"low":s.risks[1],"info":s.risks[0]},"risk_summary":format!("Critical {} | High {} | Medium {} | Low {} | Info {}",s.risks[4],s.risks[3],s.risks[2],s.risks[1],s.risks[0]),"unique_referenced_records":s.referenced,"flows":s.flows,"diagnostics":{"errors":s.errors,"warnings":s.warnings},"query_matches":s.query_matches,"priority_findings":s.priorities,"ai_coverage":s.ai_runs.iter().map(|r|serde_json::json!({"model":r.model,"complete":r.is_complete(),"completed_batches":r.completed(),"total_batches":r.batches,"analyzed_records":r.analyzed_records,"selected_records":r.selected()})).collect::<Vec<_>>()})
 }
 pub fn json(reader: &dyn ReportCursor, out: &mut dyn Write, ctx: &ExecutionContext) -> Result<()> {
     let m = reader.metadata()?;
@@ -226,21 +226,21 @@ pub fn html(reader: &dyn ReportCursor, out: &mut dyn Write, ctx: &ExecutionConte
     let script_hash = super::html::script_hash();
     write!(
         out,
-        "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-{script_hash}'; base-uri 'none'; form-action 'none'\"><title>Easy Analyzer 分析报告</title><style>{style}</style></head><body><main><header class=\"hero\"><h1>Easy Analyzer · 应急响应分析报告</h1>"
+        "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-{script_hash}'; base-uri 'none'; form-action 'none'\"><title>Easy Analyzer Analysis Report</title><style>{style}</style></head><body><main><header class=\"hero\"><h1>Easy Analyzer · Incident Response Analysis Report</h1>"
     )?;
     if let Some(h) = m.heading {
         write!(
             out,
-            "<h2>{}</h2><p>客户单位：{} · 响应开始：{} · 响应结束：{}</p>",
+            "<h2>{}</h2><p>Client: {} · Response start: {} · Response end: {}</p>",
             super::escape(&h.name),
             super::escape(&h.client),
             super::escape(&h.response_start),
-            super::escape(h.response_end.as_deref().unwrap_or("未填写"))
+            super::escape(h.response_end.as_deref().unwrap_or("Not provided"))
         )?;
     }
     write!(
         out,
-        "<p>来源 {} · 记录 {} · 发现 {} · 网络会话 {}</p><p>{}</p></header><nav><a href=\"#findings\">分析发现</a> · <a href=\"#ai\">AI 分析</a> · <a href=\"#sources\">来源</a> · <a href=\"#flows\">网络会话</a> · <a href=\"#evidence\">全部证据</a> · <a href=\"#diagnostics\">诊断</a></nav><section id=\"findings\"><h2>分析发现</h2>",
+        "<p>Sources {} · Records {} · Findings {} · Network sessions {}</p><p>{}</p></header><nav><a href=\"#findings\">Findings</a> · <a href=\"#ai\">AI Analysis</a> · <a href=\"#sources\">Sources</a> · <a href=\"#flows\">Network sessions</a> · <a href=\"#evidence\">All evidence</a> · <a href=\"#diagnostics\">Diagnostics</a></nav><section id=\"findings\"><h2>Findings</h2>",
         m.stats.sources,
         m.stats.records,
         m.stats.findings,
@@ -255,13 +255,13 @@ pub fn html(reader: &dyn ReportCursor, out: &mut dyn Write, ctx: &ExecutionConte
         if let Item::Finding(f) = item {
             write!(
                 out,
-                "<details class=\"panel\"><summary>{} · {} · {}</summary><p>{}</p><p>置信度 {}</p>",
+                "<details class=\"panel\"><summary>{} · {} · {}</summary><p>{}</p><p>Confidence {}</p>",
                 super::escape(f.severity.label()),
                 super::escape(&f.title),
                 if f.origin.starts_with("ai:") {
                     "AI"
                 } else {
-                    "本地分析"
+                    "Local analysis"
                 },
                 super::escape(&f.description),
                 f.confidence
@@ -276,20 +276,20 @@ pub fn html(reader: &dyn ReportCursor, out: &mut dyn Write, ctx: &ExecutionConte
     })?;
     write!(
         out,
-        "</section><section id=\"ai\"><h2>AI 分析 · 批次完成范围与原始回复</h2>"
+        "</section><section id=\"ai\"><h2>AI Analysis · Batch completion scope and raw replies</h2>"
     )?;
-    reader.visit(Section::AiRuns,ctx,&mut|item|{if let Item::AiRun(r,id)=item{write!(out,"<details class=\"panel\"><summary>{} · 已完成 {} / {} 批次 · 已分析 {} / {} 条</summary><p>{}</p><pre>{}</pre></details>",super::escape(&r.model),r.completed(),r.batches,r.analyzed_records,r.selected(),super::escape(&r.endpoint),super::escape(&serde_json::to_string_pretty(&r)?))?;reader.ai_batches(id,ctx,&mut|batch|{write!(out,"<details class=\"panel\"><summary>批次 {}</summary><pre>{}</pre></details>",batch.index,super::escape(&serde_json::to_string_pretty(&batch)?))?;Ok(true)})?;}Ok(true)})?;
-    write!(out, "</section><section id=\"sources\"><h2>证据来源</h2>")?;
-    reader.visit(Section::Sources,ctx,&mut|item|{if let Item::Source(s)=item{write!(out,"<details class=\"panel\"><summary>{}</summary><p>{} · {} 字节 · {}</p><p>采集时间：{}</p><p>SHA256：{}</p></details>",super::escape(&s.path),super::escape(&s.id),s.bytes,super::escape(&s.format),super::escape(&s.collected_at),super::escape(&s.sha256))?;}Ok(true)})?;
-    write!(out, "</section><section id=\"flows\"><h2>离线网络会话</h2>")?;
-    reader.visit(Section::Flows,ctx,&mut|item|{if let Item::Flow(f,id)=item{write!(out,"<details class=\"panel\"><summary>{} ↔ {} · {} · {} 包 / {} 字节</summary><p>{} — {}</p>",super::escape(&f.endpoint_a),super::escape(&f.endpoint_b),super::escape(&f.protocol),f.packets,f.bytes,super::escape(f.first_seen.as_deref().unwrap_or("未知")),super::escape(f.last_seen.as_deref().unwrap_or("未知")))?;reference_links(reader,References::Flow(id),out,ctx)?;write!(out,"</details>")?;}Ok(true)})?;
-    write!(out, "</section><section id=\"evidence\"><h2>全部证据</h2>")?;
+    reader.visit(Section::AiRuns,ctx,&mut|item|{if let Item::AiRun(r,id)=item{write!(out,"<details class=\"panel\"><summary>{} · Completed {} / {} batches · Analyzed {} / {} records</summary><p>{}</p><pre>{}</pre></details>",super::escape(&r.model),r.completed(),r.batches,r.analyzed_records,r.selected(),super::escape(&r.endpoint),super::escape(&serde_json::to_string_pretty(&r)?))?;reader.ai_batches(id,ctx,&mut|batch|{write!(out,"<details class=\"panel\"><summary>Batch {}</summary><pre>{}</pre></details>",batch.index,super::escape(&serde_json::to_string_pretty(&batch)?))?;Ok(true)})?;}Ok(true)})?;
+    write!(out, "</section><section id=\"sources\"><h2>Evidence sources</h2>")?;
+    reader.visit(Section::Sources,ctx,&mut|item|{if let Item::Source(s)=item{write!(out,"<details class=\"panel\"><summary>{}</summary><p>{} · {} bytes · {}</p><p>Collected at: {}</p><p>SHA256: {}</p></details>",super::escape(&s.path),super::escape(&s.id),s.bytes,super::escape(&s.format),super::escape(&s.collected_at),super::escape(&s.sha256))?;}Ok(true)})?;
+    write!(out, "</section><section id=\"flows\"><h2>Offline network sessions</h2>")?;
+    reader.visit(Section::Flows,ctx,&mut|item|{if let Item::Flow(f,id)=item{write!(out,"<details class=\"panel\"><summary>{} ↔ {} · {} · {} packets / {} bytes</summary><p>{} — {}</p>",super::escape(&f.endpoint_a),super::escape(&f.endpoint_b),super::escape(&f.protocol),f.packets,f.bytes,super::escape(f.first_seen.as_deref().unwrap_or("Unknown")),super::escape(f.last_seen.as_deref().unwrap_or("Unknown")))?;reference_links(reader,References::Flow(id),out,ctx)?;write!(out,"</details>")?;}Ok(true)})?;
+    write!(out, "</section><section id=\"evidence\"><h2>All evidence</h2>")?;
     let mut n = 0;
-    reader.visit(Section::Records,ctx,&mut|item|{if let Item::Record(r)=item{if n%100==0{if n>0{write!(out,"</details>")?;}write!(out,"<details class=\"panel\"><summary>记录 {}–{}</summary>",n+1,(n+100).min(m.stats.records))?;}write!(out,"<details class=\"record\" id=\"evidence-{}\"><summary>{} · {} · {}</summary><p>编号：{} · 来源：{} · 状态：{:?}</p><h4>解析字段</h4><pre>{}</pre><details><summary>原始记录</summary><pre>{}</pre></details></details>",super::escape(&r.id),super::escape(&r.position),super::escape(r.timestamp.as_deref().unwrap_or("时间未知")),super::escape(&super::record_summary(&r)),super::escape(&r.id),super::escape(&r.source_id),r.status,super::escape(&serde_json::to_string_pretty(&r.data)?),super::escape(&r.raw))?;n+=1;}Ok(true)})?;
+    reader.visit(Section::Records,ctx,&mut|item|{if let Item::Record(r)=item{if n%100==0{if n>0{write!(out,"</details>")?;}write!(out,"<details class=\"panel\"><summary>Records {}–{}</summary>",n+1,(n+100).min(m.stats.records))?;}write!(out,"<details class=\"record\" id=\"evidence-{}\"><summary>{} · {} · {}</summary><p>ID: {} · Source: {} · Status: {:?}</p><h4>Parsed fields</h4><pre>{}</pre><details><summary>Raw record</summary><pre>{}</pre></details></details>",super::escape(&r.id),super::escape(&r.position),super::escape(r.timestamp.as_deref().unwrap_or("Time unknown")),super::escape(&super::record_summary(&r)),super::escape(&r.id),super::escape(&r.source_id),r.status,super::escape(&serde_json::to_string_pretty(&r.data)?),super::escape(&r.raw))?;n+=1;}Ok(true)})?;
     if n > 0 {
         write!(out, "</details>")?;
     }
-    write!(out, "</section><section id=\"query\"><h2>查询匹配</h2>")?;
+    write!(out, "</section><section id=\"query\"><h2>Query matches</h2>")?;
     reader.visit(Section::QueryMatches, ctx, &mut |item| {
         if let Item::QueryId(id) = item {
             links(out, &[id])?;
@@ -298,7 +298,7 @@ pub fn html(reader: &dyn ReportCursor, out: &mut dyn Write, ctx: &ExecutionConte
     })?;
     write!(
         out,
-        "</section><section id=\"diagnostics\"><h2>诊断与未完成范围</h2>"
+        "</section><section id=\"diagnostics\"><h2>Diagnostics and incomplete scope</h2>"
     )?;
     reader.visit(Section::Diagnostics, ctx, &mut |item| {
         if let Item::Diagnostic(d) = item {
@@ -315,7 +315,7 @@ pub fn html(reader: &dyn ReportCursor, out: &mut dyn Write, ctx: &ExecutionConte
     })?;
     write!(
         out,
-        "</section><footer>Easy Analyzer · Schema {} · 生成于 {}</footer></main><script>{script}</script></body></html>",
+        "</section><footer>Easy Analyzer · Schema {} · Generated at {}</footer></main><script>{script}</script></body></html>",
         m.schema_version,
         super::escape(&m.generated_at)
     )?;
@@ -332,13 +332,13 @@ pub fn text(
     let m = reader.metadata()?;
     writeln!(
         out,
-        "Easy Analyzer · 来源 {} · 记录 {} · 发现 {} · 会话 {}",
+        "Easy Analyzer · Sources {} · Records {} · Findings {} · Sessions {}",
         m.stats.sources, m.stats.records, m.stats.findings, m.stats.flows
     )?;
     if let Some(h) = m.heading {
         writeln!(
             out,
-            "项目：{} · 客户单位：{} · 响应开始：{}",
+            "Project: {} · Client: {} · Response start: {}",
             h.name, h.client, h.response_start
         )?;
     }
@@ -356,7 +356,7 @@ pub fn text(
             Ok(true)
         })?;
         ctx.check()?;
-        writeln!(out, "\n进程树")?;
+        writeln!(out, "\nProcess tree")?;
         for line in crate::collect::process_tree(&processes)
             .lines()
             .take(if limit == 0 { usize::MAX } else { limit })
@@ -382,7 +382,7 @@ pub fn text(
                     if raw {
                         writeln!(out, "{}", f.description)?;
                         reader.references(References::Finding(&f.id), ctx, &mut |id| {
-                            writeln!(out, "  证据：{id}")?;
+                            writeln!(out, "  Evidence: {id}")?;
                             Ok(true)
                         })?;
                     }
@@ -394,7 +394,7 @@ pub fn text(
                     }
                 }
                 Item::Diagnostic(d) => {
-                    writeln!(out, "[{:?}] {}：{}", d.level, d.source, d.message)?
+                    writeln!(out, "[{:?}] {}: {}", d.level, d.source, d.message)?
                 }
                 _ => {}
             }

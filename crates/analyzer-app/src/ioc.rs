@@ -45,7 +45,7 @@ fn store(session: &AnalysisSession) -> Result<&std::sync::Arc<Database>> {
         .0
         .store
         .as_ref()
-        .ok_or_else(|| anyhow!("IOC 操作需要一个项目"))
+        .ok_or_else(|| anyhow!("IOC operations require a project"))
 }
 pub struct IocService;
 #[derive(Debug, Clone)]
@@ -82,7 +82,7 @@ impl IocService {
                     Self::add_text(session, text, *csv, origin, ctx),
                 ),
                 IocSource::Value { value, kind, note } => (
-                    format!("手动输入 {value}"),
+                    format!("Manually entered {value}"),
                     Self::add_value(session, value, *kind, note, ctx),
                 ),
             };
@@ -92,26 +92,26 @@ impl IocService {
                     result
                         .issues
                         .extend(imported.issues.into_iter().map(|mut issue| {
-                            issue.message = format!("{origin}：{}", issue.message);
+                            issue.message = format!("{origin}: {}", issue.message);
                             issue
                         }));
                 }
                 Err(e) if core::execution::is_cancelled(&e) => return Err(e),
                 Err(e) => result.issues.push(IocIssue {
                     line: 1,
-                    message: format!("{origin}：{e:#}"),
+                    message: format!("{origin}: {e:#}"),
                 }),
             }
         }
         if result.indicators.is_empty() {
             bail!(
-                "没有有效 IOC；原清单保留。{}",
+                "No valid IOCs; the original list is kept. {}",
                 result
                     .issues
                     .iter()
                     .map(|i| i.message.as_str())
                     .collect::<Vec<_>>()
-                    .join("；")
+                    .join("; ")
             );
         }
         Ok(result)
@@ -139,7 +139,7 @@ impl IocService {
                 indicators: vec![core::ioc::indicator(value, kind, note)?],
                 issues: vec![],
             },
-            "手动输入",
+            "Manually entered",
             ctx,
         )
     }
@@ -151,13 +151,13 @@ impl IocService {
     ) -> Result<IocImport> {
         if parsed.indicators.is_empty() {
             bail!(
-                "没有有效 IOC；原清单保留。{}",
+                "No valid IOCs; the original list is kept. {}",
                 parsed
                     .issues
                     .iter()
-                    .map(|e| format!("第 {} 行：{}", e.line, e.message))
+                    .map(|e| format!("Line {}: {}", e.line, e.message))
                     .collect::<Vec<_>>()
-                    .join("；")
+                    .join("; ")
             );
         }
         let _operation = session.lock_operation(ctx)?;
@@ -194,7 +194,7 @@ impl IocService {
         ctx: &ExecutionContext,
     ) -> Result<IocImport> {
         if fs::metadata(path)?.len() > 64 * 1024 * 1024 {
-            bail!("IOC 清单超过 64 MiB 上限");
+            bail!("The IOC list exceeds the 64 MiB limit");
         }
         let text = fs::read_to_string(path)?;
         let parsed = Self::add_text(
@@ -252,7 +252,7 @@ impl IocService {
         let mut items: Vec<Indicator> = values(c, "SELECT json FROM iocs WHERE id=?1", [id])?;
         let item = items
             .first_mut()
-            .ok_or_else(|| anyhow!("IOC 不属于当前项目"))?;
+            .ok_or_else(|| anyhow!("The IOC does not belong to the current project"))?;
         let old_note = item.note.clone();
         item.note = note.into();
         c.execute(
@@ -332,7 +332,7 @@ impl IocService {
             )
         };
         if items.is_empty() {
-            bail!("请先添加 IOC");
+            bail!("Add IOCs first");
         }
         ctx.check()?;
         let matcher = IocMatcher::new(&items, subdomains);
@@ -419,15 +419,17 @@ impl IocService {
                             id: format!("ioc:{id}:{}", record.id),
                             origin: "local:ioc".into(),
                             severity: core::Severity::Medium,
-                            title: format!("IOC 命中：{}", item.value),
+                            title: format!("IOC hit: {}", item.value),
                             description: format!(
-                                "{}\n{}\n仅证明证据出现该 IOC，需结合来源和业务用途核查。",
+                                "{}\n{}\nThe presence of this IOC in the evidence only shows the value occurred; verify it against the source and business purpose.",
                                 item.note,
-                                fields.join("；")
+                                fields.join("; ")
                             ),
                             evidence_ids: vec![record.id.clone()],
                             confidence: 1.0,
-                            recommendations: vec!["核查该地址的访问目的、时段和关联行为。".into()],
+                            recommendations: vec![
+                                "Verify the purpose, time period, and related behavior of access to this address.".into(),
+                            ],
                         },
                     )?;
                 }
@@ -435,7 +437,7 @@ impl IocService {
                 run.scanned_records += 1;
                 ctx.emit(
                     core::execution::Stage::Rules,
-                    Some("IOC 匹配"),
+                    Some("IOC matching"),
                     run.scanned_records,
                     Some(total),
                 );
@@ -462,10 +464,10 @@ impl IocService {
                     "INSERT INTO diagnostics(json) VALUES(?1)",
                     [crate::storage::packed_json(&core::Diagnostic {
                         level: DiagnosticLevel::Warning,
-                        source: "IOC 匹配".into(),
+                        source: "IOC matching".into(),
                         position: None,
                         message: format!(
-                            "扫描未完成：已扫描 {} / {} 条，保留有效命中。",
+                            "Scan incomplete: scanned {} / {} records; valid hits are retained.",
                             run.scanned_records, total
                         ),
                     })?],

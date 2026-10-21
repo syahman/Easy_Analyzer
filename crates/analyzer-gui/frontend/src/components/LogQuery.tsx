@@ -22,8 +22,8 @@ export function LogQueryFields({
       <div className="log-query-grid">
         {(
           [
-            ["time_from", "开始时间（本地）"],
-            ["time_until", "结束时间（本地）"],
+            ["time_from", "Start time (local)"],
+            ["time_until", "End time (local)"],
           ] as const
         ).map(([key, label]) => (
           <label key={key} className="form-field">
@@ -44,13 +44,13 @@ export function LogQueryFields({
         ))}
         {(
           [
-            ["log_level", "日志级别", "例如：ERROR, WARN, SEVERE"],
-            ["client_ip", "客户端 IP", "完整地址，例如：192.0.2.10"],
-            ["http_status", "HTTP 状态码", "例如：403, 404, 500"],
-            ["method", "请求方法", "例如：GET, POST"],
-            ["uri", "请求路径", "包含，例如：/api/ 或 .jsp"],
-            ["logger", "日志类 / Logger", "包含，例如：org.apache.catalina"],
-            ["host", "主机 / 计算机", "包含主机名称"],
+            ["log_level", "Log level", "e.g. ERROR, WARN, SEVERE"],
+            ["client_ip", "Client IP", "full address, e.g. 192.0.2.10"],
+            ["http_status", "HTTP status", "e.g. 403, 404, 500"],
+            ["method", "Request method", "e.g. GET, POST"],
+            ["uri", "Request path", "contains, e.g. /api/ or .jsp"],
+            ["logger", "Logger class", "contains, e.g. org.apache.catalina"],
+            ["host", "Host / computer", "contains the host name"],
           ] as const
         ).map(([key, label, placeholder]) => (
           <label key={key} className="form-field">
@@ -66,16 +66,16 @@ export function LogQueryFields({
           </label>
         ))}
         <label className="form-field">
-          无时区日志的时区
+          Time zone for logs without one
           <Select
-            label="无时区日志的时区"
+            label="Time zone for logs without one"
             value={value.time_offset === null ? "" : String(value.time_offset)}
             disabled={disabled}
             onChange={(v) =>
               change({ time_offset: v === "" ? null : Number(v) })
             }
             options={[
-              { value: "", label: "未指定（时间未知）" },
+              { value: "", label: "Unspecified (time unknown)" },
               ...Array.from(
                 new Set([
                   0,
@@ -87,47 +87,51 @@ export function LogQueryFields({
                 .sort((a, b) => a - b)
                 .map((minutes) => ({
                   value: String(minutes),
-                  label: `UTC${minutes < 0 ? "-" : "+"}${String(Math.floor(Math.abs(minutes) / 60)).padStart(2, "0")}:${String(Math.abs(minutes) % 60).padStart(2, "0")}${minutes === -new Date().getTimezoneOffset() ? "（本机）" : ""}`,
+                  label: `UTC${minutes < 0 ? "-" : "+"}${String(Math.floor(Math.abs(minutes) / 60)).padStart(2, "0")}:${String(Math.abs(minutes) % 60).padStart(2, "0")}${minutes === -new Date().getTimezoneOffset() ? " (local)" : ""}`,
                 })),
             ]}
           />
         </label>
       </div>
       <p className="log-query-hint">
-        查询边界使用本机时区 {timezone}，包含起止时刻。Nginx/Tomcat
-        等日志未注明时区时，请按证据来源选择时区；原始时间不变，缺少年份的时间仍为未知。日志级别、状态码、请求方法可用逗号分隔，列表内匹配任一值，各条件同时满足。客户端
-        IP 等于匹配，路径、Logger、主机包含匹配。
+        Query bounds use the local time zone {timezone} and include both
+        endpoints. When Nginx/Tomcat-style logs do not state a time zone, choose
+        one based on the evidence source; raw times stay unchanged, and times
+        missing a year remain unknown. Log level, HTTP status, and request
+        method accept comma-separated lists matching any value, and all
+        conditions must hold. Client IP matches exactly; path, logger, and host
+        match by containment.
       </p>
       <details className="log-query-windows">
-        <summary>Windows 事件专用条件</summary>
+        <summary>Windows event conditions</summary>
         <div className="log-query-grid">
           <label className="form-field">
-            Windows 事件 ID
+            Windows event IDs
             <input
               className="input"
-              aria-label="Windows 事件 ID"
+              aria-label="Windows event IDs"
               value={value.event_ids}
               disabled={disabled}
-              placeholder="例如：4624, 4625, 4688"
+              placeholder="e.g. 4624, 4625, 4688"
               onChange={(e) => change({ event_ids: e.target.value })}
             />
           </label>
           <label className="form-field">
-            Windows 事件级别
+            Windows event level
             <Select
-              label="Windows 事件级别"
+              label="Windows event level"
               value={value.level || ""}
               disabled={disabled}
               onChange={(v) => change({ level: v || null })}
               options={[
-                { value: "", label: "全部级别" },
+                { value: "", label: "All levels" },
                 ...[
-                  "未指定 / 审核事件 (0)",
-                  "严重 (1)",
-                  "错误 (2)",
-                  "警告 (3)",
-                  "信息 (4)",
-                  "详细 (5)",
+                  "Unspecified / audit event (0)",
+                  "Critical (1)",
+                  "Error (2)",
+                  "Warning (3)",
+                  "Information (4)",
+                  "Verbose (5)",
                 ].map((label, i) => ({ value: String(i), label })),
               ]}
             />
@@ -136,10 +140,10 @@ export function LogQueryFields({
             [
               [
                 "provider",
-                "事件提供程序",
-                "例如：Microsoft-Windows-Security-Auditing",
+                "Event provider",
+                "e.g. Microsoft-Windows-Security-Auditing",
               ],
-              ["channel", "日志通道", "例如：Security / System"],
+              ["channel", "Log channel", "e.g. Security / System"],
             ] as const
           ).map(([key, label, placeholder]) => (
             <label key={key} className="form-field">
@@ -157,7 +161,7 @@ export function LogQueryFields({
         </div>
       </details>
       <div className="log-query-custom-heading">
-        <strong>自定义字段条件</strong>
+        <strong>Custom field conditions</strong>
         <Button
           type="button"
           size="sm"
@@ -173,19 +177,20 @@ export function LogQueryFields({
           }
         >
           <Plus size={14} />
-          添加条件
+          Add condition
         </Button>
       </div>
       <p className="log-query-hint">
-        可查询 thread、duration、user、action
-        等详情中的字段名，也支持原始字段路径。字段名和值均不区分大小写，多个条件同时满足。
+        Field names may come from details such as thread, duration, user, or
+        action; raw field paths also work. Names and values are
+        case-insensitive, and all conditions must hold.
       </p>
       {value.fields.map((field, index) => (
         <div className="log-query-custom-row" key={index}>
           <input
             className="input"
-            aria-label={`查询字段 ${index + 1}`}
-            placeholder="字段名"
+            aria-label={`Query field ${index + 1}`}
+            placeholder="Field name"
             value={field.field}
             disabled={disabled}
             onChange={(e) =>
@@ -197,12 +202,12 @@ export function LogQueryFields({
             }
           />
           <Select
-            label={`字段匹配方式 ${index + 1}`}
+            label={`Field match mode ${index + 1}`}
             value={field.mode}
             disabled={disabled}
             options={[
-              { value: "contains", label: "包含" },
-              { value: "equals", label: "等于" },
+              { value: "contains", label: "Contains" },
+              { value: "equals", label: "Equals" },
             ]}
             onChange={(mode) =>
               change({
@@ -216,8 +221,8 @@ export function LogQueryFields({
           />
           <input
             className="input"
-            aria-label={`查询字段值 ${index + 1}`}
-            placeholder="字段值"
+            aria-label={`Query field value ${index + 1}`}
+            placeholder="Field value"
             value={field.value}
             disabled={disabled}
             onChange={(e) =>
@@ -232,7 +237,7 @@ export function LogQueryFields({
             type="button"
             variant="ghost"
             size="icon"
-            aria-label={`移除字段条件 ${index + 1}`}
+            aria-label={`Remove condition ${index + 1}`}
             disabled={disabled}
             onClick={() =>
               change({ fields: value.fields.filter((_, i) => i !== index) })
@@ -265,8 +270,8 @@ export function LogQueryDialog({
   return (
     <Dialog
       open
-      title="日志多维查询"
-      description="在完整日志集合中组合查询，不受当前页限制。"
+      title="Multi-dimensional log query"
+      description="Combine conditions across the full log collection, regardless of the current page."
       className="log-query-dialog"
       onOpenChange={(open) => {
         if (!open) onClose();
@@ -301,7 +306,7 @@ export function LogQueryDialog({
         </div>
         {error && (
           <div role="alert" className="warning-note">
-            {error}。保留上一次有效查询。
+            {error}. The last valid query is kept.
           </div>
         )}
         <div className="dialog-actions">
@@ -311,14 +316,14 @@ export function LogQueryDialog({
             disabled={locked}
             onClick={() => setValue(defaultLogQuery())}
           >
-            清空条件
+            Clear conditions
           </Button>
           <Button type="button" variant="ghost" onClick={onClose}>
-            {locked ? "取消查询" : "取消"}
+            {locked ? "Cancel query" : "Cancel"}
           </Button>
           <Button type="submit" disabled={locked}>
             {locked && <LoaderCircle size={14} className="spin" />}
-            {locked ? "正在查询…" : "应用查询"}
+            {locked ? "Querying…" : "Apply query"}
           </Button>
         </div>
       </form>

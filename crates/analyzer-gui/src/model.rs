@@ -115,66 +115,66 @@ impl Filters {
     pub fn label(&self, screen: Screen) -> String {
         let mut parts = vec![
             match screen {
-                Screen::Logs => "日志",
-                Screen::Processes => "进程",
-                _ => "数据包",
+                Screen::Logs => "Logs",
+                Screen::Processes => "Processes",
+                _ => "Packets",
             }
             .to_string(),
         ];
         if !self.text.is_empty() {
             parts.push(format!(
-                "{}：{}",
-                if self.regex { "正则" } else { "关键词" },
+                "{}: {}",
+                if self.regex { "Regex" } else { "Keyword" },
                 self.text
             ));
         }
         if self.suspicious {
-            parts.push("本地可疑项".into());
+            parts.push("Local suspicious items".into());
         }
         if self.source.is_some() {
-            parts.push("指定来源".into());
+            parts.push("Selected source".into());
         }
         if let Some(v) = &self.category {
-            parts.push(format!("类别：{v}"));
+            parts.push(format!("Category: {v}"));
         }
         if let Some(v) = &self.protocol {
-            parts.push(format!("协议：{v}"));
+            parts.push(format!("Protocol: {v}"));
         }
         if let Some(v) = &self.status {
-            parts.push(format!("解析状态：{v:?}"));
+            parts.push(format!("Parse status: {v:?}"));
         }
         if let Some(v) = self.flow {
-            parts.push(format!("会话 #{} 关联包", v + 1));
+            parts.push(format!("Session #{} packets", v + 1));
         }
         if screen == Screen::Logs {
             if let Some(v) = &self.log_query.time_from {
-                parts.push(format!("开始：{v}"));
+                parts.push(format!("From: {v}"));
             }
             if let Some(v) = &self.log_query.time_until {
-                parts.push(format!("结束：{v}"));
+                parts.push(format!("Until: {v}"));
             }
             if !self.log_query.event_ids.trim().is_empty() {
-                parts.push(format!("事件 ID：{}", self.log_query.event_ids));
+                parts.push(format!("Event IDs: {}", self.log_query.event_ids));
             }
             if let Some(v) = &self.log_query.level {
-                parts.push(format!("事件级别：{v}"));
+                parts.push(format!("Event level: {v}"));
             }
             if let Some(minutes) = self.log_query.time_offset {
-                parts.push(format!("无时区日志偏移：{minutes} 分钟"));
+                parts.push(format!("Timezone-less log offset: {minutes} minutes"));
             }
             for (label, value) in [
-                ("日志级别", &self.log_query.log_level),
-                ("客户端 IP", &self.log_query.client_ip),
-                ("HTTP 状态码", &self.log_query.http_status),
-                ("请求方法", &self.log_query.method),
-                ("请求路径", &self.log_query.uri),
+                ("Log level", &self.log_query.log_level),
+                ("Client IP", &self.log_query.client_ip),
+                ("HTTP status", &self.log_query.http_status),
+                ("Request method", &self.log_query.method),
+                ("Request path", &self.log_query.uri),
                 ("Logger", &self.log_query.logger),
-                ("提供程序", &self.log_query.provider),
-                ("通道", &self.log_query.channel),
-                ("主机", &self.log_query.host),
+                ("Provider", &self.log_query.provider),
+                ("Channel", &self.log_query.channel),
+                ("Host", &self.log_query.host),
             ] {
                 if !value.trim().is_empty() {
-                    parts.push(format!("{label}：{value}"));
+                    parts.push(format!("{label}: {value}"));
                 }
             }
             for f in &self.log_query.fields {
@@ -184,7 +184,7 @@ impl Filters {
                     if f.mode == FieldMatch::Equals {
                         "="
                     } else {
-                        "包含"
+                        "contains"
                     },
                     f.value
                 ));
@@ -275,7 +275,7 @@ impl ConfigInput {
             "" | "keep" => previous.api_key.clone(),
             "replace" => self.key_value,
             "clear" => String::new(),
-            _ => anyhow::bail!("无效的密钥操作"),
+            _ => anyhow::bail!("Invalid key action"),
         };
         let c = core::ai::AiConfig {
             base_url: self.base_url,
@@ -319,7 +319,7 @@ pub struct ImportRequest {
 impl ImportRequest {
     pub fn request(self) -> anyhow::Result<AnalysisRequest> {
         if cfg!(target_os = "macos") && self.auto_logs {
-            anyhow::bail!("macOS 不支持本机通用日志加载，请导入离线日志");
+            anyhow::bail!("macOS does not support local event log loading, import offline logs");
         }
         Ok(AnalysisRequest {
             inputs: self

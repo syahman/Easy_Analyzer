@@ -510,7 +510,7 @@ fn rules_cancellation_and_failed_background_operation_are_visible() {
     assert!(
         outcome
             .session
-            .with_report(|r| r.diagnostics.iter().any(|d| d.message.contains("已取消")))
+            .with_report(|r| r.diagnostics.iter().any(|d| d.message.contains("cancelled")))
             .unwrap()
     );
     let worker = task::spawn_operation::<()>(|_| panic!("mock operation failure"));

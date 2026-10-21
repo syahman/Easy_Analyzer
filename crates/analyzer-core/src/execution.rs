@@ -22,7 +22,7 @@ impl CancellationToken {
 pub struct Cancelled;
 impl std::fmt::Display for Cancelled {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("分析已取消")
+        f.write_str("Analysis cancelled")
     }
 }
 impl std::error::Error for Cancelled {}
@@ -143,7 +143,7 @@ impl ReportOutcome {
         report.error(
             source,
             None,
-            "分析已取消；仅保留已完成读取并校验来源的证据及已解析记录，当前范围不完整。",
+            "Analysis cancelled; only evidence from fully read and hash-verified sources plus parsed records is retained, and the current scope is incomplete.",
         );
         Self {
             report,

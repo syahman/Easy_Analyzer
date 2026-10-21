@@ -25,17 +25,17 @@ fn project_names_default_to_clients_and_custom_names_survive_edits() {
     let root = dir.path();
     let created = ok(
         root,
-        &["project", "create", "a.eair", "--client", " 合成客户甲 "],
+        &["project", "create", "a.eair", "--client", " Synthetic Client A "],
     );
-    assert_eq!(created["info"]["name"], "合成客户甲");
-    assert_eq!(created["info"]["client"], "合成客户甲");
+    assert_eq!(created["info"]["name"], "Synthetic Client A");
+    assert_eq!(created["info"]["client"], "Synthetic Client A");
     let edited = ok(
         root,
-        &["project", "edit", "a.eair", "--client", "合成客户乙"],
+        &["project", "edit", "a.eair", "--client", "Synthetic Client B"],
     );
-    assert_eq!(edited["info"]["name"], "合成客户甲");
+    assert_eq!(edited["info"]["name"], "Synthetic Client A");
     let reset = ok(root, &["project", "edit", "a.eair", "--name", " "]);
-    assert_eq!(reset["info"]["name"], "合成客户乙");
+    assert_eq!(reset["info"]["name"], "Synthetic Client B");
     assert!(
         !run(root, &["project", "create", "invalid.eair"])
             .status
@@ -52,13 +52,13 @@ fn project_names_default_to_clients_and_custom_names_survive_edits() {
             "--save-project",
             "b.eair",
             "--client",
-            "合成客户丙",
+            "Synthetic Client C",
             "--output",
             "json",
         ],
     );
-    let entries = ok(root, &["project", "list", "--client", "合成客户丙"]);
-    assert_eq!(entries[0]["info"]["name"], "合成客户丙");
+    let entries = ok(root, &["project", "list", "--client", "Synthetic Client C"]);
+    assert_eq!(entries[0]["info"]["name"], "Synthetic Client C");
     ok(
         root,
         &[
@@ -67,15 +67,15 @@ fn project_names_default_to_clients_and_custom_names_survive_edits() {
             "--save-project",
             "c.eair",
             "--client",
-            "合成客户丁",
+            "Synthetic Client D",
             "--project-name",
-            "自定义响应",
+            "Custom Response",
             "--output",
             "json",
         ],
     );
-    let entries = ok(root, &["project", "list", "--client", "合成客户丁"]);
-    assert_eq!(entries[0]["info"]["name"], "自定义响应");
+    let entries = ok(root, &["project", "list", "--client", "Synthetic Client D"]);
+    assert_eq!(entries[0]["info"]["name"], "Custom Response");
 }
 #[test]
 fn cli_projects_create_append_note_edit_and_reopen() {
@@ -89,9 +89,9 @@ fn cli_projects_create_append_note_edit_and_reopen() {
             "create",
             "a.eair",
             "--name",
-            "合成甲项目",
+            "Synthetic Project A",
             "--client",
-            "合成单位",
+            "Synthetic Org",
         ],
     );
     let id = created["info"]["id"].clone();
@@ -120,12 +120,12 @@ fn cli_projects_create_append_note_edit_and_reopen() {
             "--record",
             record,
             "--text",
-            "合成备注",
+            "Synthetic note",
         ],
     );
     assert_eq!(
         ok(root, &["project", "note", "a.eair", "--record", record]),
-        "合成备注"
+        "Synthetic note"
     );
     let edited = ok(
         root,
@@ -134,7 +134,7 @@ fn cli_projects_create_append_note_edit_and_reopen() {
             "edit",
             "a.eair",
             "--name",
-            "合成乙项目",
+            "Synthetic Project B",
             "--response-start",
             "2026-10-04T09:00:00+08:00",
         ],
@@ -149,7 +149,7 @@ fn cli_projects_create_append_note_edit_and_reopen() {
             "project",
             "list",
             "--search",
-            "合成乙",
+            "Project B",
             "--from",
             "2026-10-04",
             "--until",
@@ -182,9 +182,9 @@ fn saving_new_project_requires_metadata_and_protects_all_inputs() {
             "--save-project",
             "a.eair",
             "--project-name",
-            "合成项目",
+            "Synthetic Project",
             "--client",
-            "合成客户",
+            "Synthetic Client",
             "--ioc",
             "ioc.txt",
             "--ioc-value",

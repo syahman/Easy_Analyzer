@@ -79,9 +79,9 @@ fn mixed_routing_and_three_outputs() {
     assert_eq!(report["records"].as_array().unwrap().len(), 11);
     assert_eq!(report["sources"].as_array().unwrap().len(), 3);
     let html = std::fs::read_to_string(html).unwrap();
-    assert!(html.contains("进程父子关系"));
-    assert!(html.contains("网络会话"));
-    assert!(String::from_utf8_lossy(&out.stdout).contains("分析发现"));
+    assert!(html.contains("Process parent-child relationships"));
+    assert!(html.contains("network sessions"));
+    assert!(String::from_utf8_lossy(&out.stdout).contains("Findings"));
 }
 #[test]
 fn stdin_and_json_stdout() {
@@ -376,7 +376,7 @@ fn ctrl_c_retains_ai_reply_and_saves_json_without_another_batch() {
             .as_array()
             .unwrap()
             .iter()
-            .any(|d| d["message"].as_str().unwrap().contains("已取消"))
+            .any(|d| d["message"].as_str().unwrap().contains("cancelled"))
     );
     assert!(!String::from_utf8_lossy(&output.stdout).contains("fake-signal-test-key"));
 }

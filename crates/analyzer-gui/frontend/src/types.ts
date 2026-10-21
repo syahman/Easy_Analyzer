@@ -325,16 +325,16 @@ export interface ImportRequest {
   web_format: string | null;
 }
 export const severityLabel: Record<Severity, string> = {
-  critical: "严重",
-  high: "高危",
-  medium: "中危",
-  low: "低危",
-  info: "信息",
+  critical: "Critical",
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+  info: "Info",
 };
 export const statusLabel: Record<ParseStatus, string> = {
-  parsed: "已解析",
-  unrecognized: "未识别",
-  malformed: "损坏",
+  parsed: "Parsed",
+  unrecognized: "Unrecognized",
+  malformed: "Malformed",
 };
 export const sessionScreens: SessionScreen[] = [
   "projects",
@@ -354,17 +354,17 @@ export const screens: Screen[] = [
   ...sessionScreens.filter((s) => s !== "projects"),
 ];
 export const titles: Record<Screen, string> = {
-  projects: "应急响应项目",
-  commands: "应急响应命令",
-  ioc: "IOC 匹配",
-  import: "导入分析",
-  overview: "分析概览",
-  logs: "日志证据",
-  processes: "进程分析",
-  network: "网络分析",
-  ai: "AI 分析",
-  reports: "报告与来源",
-  settings: "设置",
+  projects: "Incident response projects",
+  commands: "Incident response commands",
+  ioc: "IOC matching",
+  import: "Import analysis",
+  overview: "Analysis overview",
+  logs: "Log evidence",
+  processes: "Process analysis",
+  network: "Network analysis",
+  ai: "AI analysis",
+  reports: "Reports and sources",
+  settings: "Settings",
 };
 export const evidenceScreen = (
   s: Screen,

@@ -50,17 +50,17 @@ export function ImportView({
             <UploadCloud size={23} strokeWidth={1.5} />
           </div>
           <div>
-            <strong>拖入证据文件，开始分析</strong>
-            <p>EVTX、系统日志、Web 日志、进程快照、PCAP / PCAPNG</p>
+            <strong>Drop evidence files to start analysis</strong>
+            <p>EVTX, system logs, web logs, process snapshots, PCAP / PCAPNG</p>
           </div>
           <span className="btn btn-secondary">
             <Plus size={14} />
-            选择文件
+            Select files
           </span>
         </button>
         <div className="collection-row">
           <Checkbox
-            label="采集本机进程"
+            label="Capture local processes"
             checked={request.live}
             disabled={busy}
             onChange={(live) => onChange({ ...request, live })}
@@ -68,12 +68,12 @@ export function ImportView({
           <span
             title={
               platform === "macos"
-                ? "macOS 暂不支持本机通用日志采集，请导入离线日志。"
+                ? "macOS does not yet support local generic log collection; import offline logs."
                 : ""
             }
           >
             <Checkbox
-              label="加载本机日志"
+              label="Load local logs"
               checked={request.auto_logs}
               disabled={busy || platform === "macos"}
               onChange={(auto_logs) => onChange({ ...request, auto_logs })}
@@ -86,7 +86,7 @@ export function ImportView({
             onClick={() => onPick("capture")}
           >
             <FolderOpen size={14} />
-            采集保存目录
+            Capture output directory
           </Button>
         </div>
         {platform === "windows" && (
@@ -95,15 +95,15 @@ export function ImportView({
               <span className="small-badge" title={elevationError || undefined}>
                 <ShieldCheck size={13} />
                 {elevated === true
-                  ? "管理员权限"
+                  ? "Administrator"
                   : elevated === false
-                    ? "普通权限"
-                    : "权限状态未知"}
+                    ? "Standard user"
+                    : "Unknown privilege level"}
               </span>
               <p>
                 {elevated === true
-                  ? "采集时尝试启用调试权限；受保护或已退出的进程仍可能缺失字段。"
-                  : "提升权限有助于读取更多路径、命令行及账户信息。新窗口会话为空，当前证据保留。"}
+                  ? "Debug privileges are requested during capture; protected or exited processes may still miss fields."
+                  : "Elevated privileges help read more paths, command lines, and account details. The new window starts an empty session while current evidence is kept."}
               </p>
             </div>
             {elevated !== true && (
@@ -114,7 +114,7 @@ export function ImportView({
                 onClick={onElevate}
               >
                 <ShieldCheck size={14} />
-                {elevationBusy ? "等待 UAC 授权…" : "以管理员身份启动"}
+                {elevationBusy ? "Waiting for UAC…" : "Launch as administrator"}
               </Button>
             )}
           </div>
@@ -124,7 +124,7 @@ export function ImportView({
         </div>
         <div className="section-label">
           <span>
-            待分析文件 <small>{request.paths.length}</small>
+            Files to analyze <small>{request.paths.length}</small>
           </span>
           <Button
             variant="ghost"
@@ -132,7 +132,7 @@ export function ImportView({
             disabled={busy || !request.paths.length}
             onClick={() => onChange({ ...request, paths: [] })}
           >
-            清空
+            Clear
           </Button>
         </div>
         <div className="file-list">
@@ -143,12 +143,12 @@ export function ImportView({
                 <strong>{basename(path)}</strong>
                 <span className="mono">{path}</span>
               </div>
-              <span className="small-badge">自动识别</span>
+              <span className="small-badge">Auto-detect</span>
               <Button
                 variant="ghost"
                 size="icon"
                 disabled={busy}
-                aria-label={`移除 ${basename(path)}`}
+                aria-label={`Remove ${basename(path)}`}
                 onClick={() =>
                   onChange({
                     ...request,
@@ -163,21 +163,25 @@ export function ImportView({
           {!request.paths.length && (
             <div className="file-empty">
               <FileText size={24} strokeWidth={1.2} />
-              <span>尚未添加文件</span>
-              <p>选择文件或将文件拖到窗口，也可采集本机进程。</p>
+              <span>No files added yet</span>
+              <p>
+                Select files or drag them onto the window; local process capture
+                is also available.
+              </p>
             </div>
           )}
         </div>
         <details className="advanced-import">
           <summary>
             <ChevronDown size={13} />
-            高级选项 <span>格式、输入限制与 Web 定义</span>
+            Advanced options{" "}
+            <span>formats, input limits, and web definitions</span>
           </summary>
           <div className="advanced-grid">
             <label>
-              整批格式
+              Batch format
               <Select
-                label="整批格式"
+                label="Batch format"
                 disabled={busy}
                 value={request.format}
                 onChange={(format) => onChange({ ...request, format })}
@@ -193,12 +197,13 @@ export function ImportView({
                   "pcap",
                 ].map((value) => ({
                   value,
-                  label: value === "auto" ? "自动识别（混合导入）" : value,
+                  label:
+                    value === "auto" ? "Auto-detect (mixed import)" : value,
                 }))}
               />
             </label>
             <label>
-              最大 MiB / 文件
+              Max MiB per file
               <input
                 className="input"
                 type="number"
@@ -215,7 +220,7 @@ export function ImportView({
               />
             </label>
             <label>
-              最大记录 / 输入
+              Max records per input
               <input
                 className="input"
                 type="number"
@@ -229,7 +234,7 @@ export function ImportView({
               />
             </label>
             <label className="wide">
-              Web 格式定义
+              Web format definition
               <div className="input-action">
                 <input
                   className="input mono"
@@ -238,14 +243,14 @@ export function ImportView({
                   onChange={(e) =>
                     onChange({ ...request, web_format: e.target.value })
                   }
-                  placeholder="可选的 Apache / Nginx 格式定义文件"
+                  placeholder="Optional Apache / Nginx format definition file"
                 />
                 <Button
                   variant="outline"
                   disabled={busy}
                   onClick={() => onPick("web")}
                 >
-                  选择
+                  Pick
                 </Button>
               </div>
             </label>
@@ -255,7 +260,7 @@ export function ImportView({
       <div className="import-action">
         <span>
           <span className="status-dot" />
-          默认只进行本地分析，证据不会自动发送。
+          Local analysis runs by default; evidence is never sent automatically.
         </span>
         <Button
           disabled={
@@ -264,7 +269,7 @@ export function ImportView({
           }
           onClick={onStart}
         >
-          开始本地分析
+          Start local analysis
           <ArrowRight size={14} />
         </Button>
       </div>

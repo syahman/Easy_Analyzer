@@ -37,7 +37,7 @@ export function Dialog({
               )}
             </div>
             <DialogPrimitive.Close
-              aria-label="关闭"
+              aria-label="Close"
               className="btn btn-ghost btn-icon"
             >
               <X size={16} />

@@ -20,15 +20,15 @@ class Handler(BaseHTTPRequestHandler):
         global requests
         body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))))
         text = "\n".join(m.get("content", "") for m in body.get("messages", []))
-        ids = re.findall(r"^证据编号: (.+)$", text, flags=re.M)
+        ids = re.findall(r"^Evidence ID: (.+)$", text, flags=re.M)
         requests += 1
         time.sleep(args.delay)
         finding = {"findings": [{
             "severity": "medium",
-            "title": "模拟服务：待核查的证据关联",
-            "description": "此发现由本机验收模拟服务返回，已通过应用层证据引用校验。",
+            "title": "Mock service: evidence correlation to investigate",
+            "description": "This finding was returned by the local acceptance mock service and has passed application-layer evidence reference validation.",
             "evidence_ids": ids[:1], "confidence": 0.8,
-            "recommendations": ["核对原始记录；合成验收数据不构成真实事件结论。"],
+            "recommendations": ["Verify the original records; synthetic acceptance data does not constitute a real incident conclusion."],
         }]} if ids else {"findings": []}
         content = "{" if args.fail_after >= 0 and requests > args.fail_after else json.dumps(finding, ensure_ascii=False)
         data = json.dumps({"choices": [{"message": {"content": content}, "finish_reason": "stop"}]}, ensure_ascii=False).encode()

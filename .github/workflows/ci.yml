@@ -1,5 +1,5 @@
 name: CI and packages
-# 分支只生成构建附件；明确推送版本 tag 后才发布正式版或预览版。
+# Branch pushes only produce build artifacts; stable or preview releases happen only when a version tag is explicitly pushed.
 on:
   push:
     branches:
@@ -159,27 +159,27 @@ jobs:
           awk -v version="$version" 'index($0, "## " version " — ") == 1 { found=1; next } found && /^## / { exit } found { print }' CHANGELOG.md > "$RUNNER_TEMP/release-notes.md"
           test -s "$RUNNER_TEMP/release-notes.md"
           if [[ "$PREVIEW" == true ]]; then
-            echo '应急响应项目与 IOC 功能预览版，用于验证新功能。' >> "$RUNNER_TEMP/release-notes.md"
-            echo '新增独立 SQLite 项目、跨客户续办与追加证据、IOC 文件/粘贴/手动匹配，以及 macOS/Windows 安装包。' >> "$RUNNER_TEMP/release-notes.md"
+            echo 'Preview release of the incident response project and IOC features, intended for validating new functionality.' >> "$RUNNER_TEMP/release-notes.md"
+            echo 'Adds standalone SQLite projects, cross-client case continuation and evidence appending, IOC file/paste/manual matching, and macOS/Windows installers.' >> "$RUNNER_TEMP/release-notes.md"
             echo '' >> "$RUNNER_TEMP/release-notes.md"
             windows_gui=easy-analyzer-gui-windows-x64-setup.exe
           else
             windows_gui=easy-analyzer-gui-windows-x64.exe
           fi
           cat >> "$RUNNER_TEMP/release-notes.md" <<NOTES
-          应急响应证据分析工具，同时提供命令行 CLI 和桌面 GUI。
+          Incident response evidence analysis tool with both a command-line CLI and a desktop GUI.
 
-          | 平台 | CLI（命令行） | GUI（图形界面） |
+          | Platform | CLI | GUI |
           | --- | --- | --- |
           | Windows x64 | easy-analyzer-cli-windows-x64.exe | $windows_gui |
           | Linux x64 | easy-analyzer-cli-linux-x64 | easy-analyzer-gui-linux-x64 |
           | macOS ARM64 | easy-analyzer-cli-macos-arm64 | easy-analyzer-gui-macos-arm64.dmg |
 
-          SHA256SUMS 包含以上六个附件的 SHA-256 校验值，其中 macOS GUI 校验 DMG 本身。源码、配置、样本与截图不作为附件发布。
-          Windows GUI 需要 Microsoft Edge WebView2 Runtime；预览安装包安装到当前用户，缺少运行环境时联网下载。Windows 安装包未签名。
-          Linux GUI 需要桌面环境、GTK 3 与 WebKitGTK 4.1 运行库（Ubuntu 22.04 可安装 libwebkit2gtk-4.1-0）。
-          Linux 程序和 macOS CLI 下载后先 chmod +x，再直接运行。
-          macOS GUI：打开未压缩的 .dmg，将 Easy Analyzer.app 拖入“应用程序”后打开，无需手动 chmod。GUI 要求 13.0+，CLI 要求 11.0+；仅支持 Apple Silicon ARM64，采用 ad-hoc 签名，未进行 Apple 公证。如系统阻止打开，可在“系统设置 → 隐私与安全性”确认来源后允许打开。
+          SHA256SUMS contains SHA-256 checksums for the six attachments above; for the macOS GUI, the checksum covers the DMG itself. Source code, configuration, samples, and screenshots are not published as release assets.
+          The Windows GUI requires Microsoft Edge WebView2 Runtime; the preview installer installs for the current user and downloads the runtime online when missing. The Windows installer is unsigned.
+          The Linux GUI requires a desktop environment plus GTK 3 and WebKitGTK 4.1 runtime libraries (on Ubuntu 22.04, install libwebkit2gtk-4.1-0).
+          After downloading the Linux binaries and the macOS CLI, run chmod +x first, then run them directly.
+          macOS GUI: open the uncompressed .dmg and drag Easy Analyzer.app into Applications, then open it — no manual chmod needed. The GUI requires macOS 13.0+ and the CLI requires 11.0+; only Apple Silicon ARM64 is supported, with an ad-hoc signature and no Apple notarization. If the system blocks the app, confirm the source under “System Settings → Privacy & Security” and allow it to open.
           NOTES
       - name: Upload clean release draft
         shell: bash
@@ -189,7 +189,7 @@ jobs:
           if [[ "$PREVIEW" == true ]]; then channel+=(--prerelease --latest=false); fi
           cd release
           if gh release view "$RELEASE_TAG" --json isDraft,assets > "$RUNNER_TEMP/existing-release.json"; then
-            # 失败后重跑可补全草稿，但不覆盖已经发布的版本。
+            # Rerunning after a failure can complete the draft, but never overwrites an already published release.
             test "$(jq -r '.isDraft' "$RUNNER_TEMP/existing-release.json")" = true
             jq -e --slurpfile expected "$RUNNER_TEMP/expected-assets.json" \
               '([.assets[].name] - $expected[0]) | length == 0' "$RUNNER_TEMP/existing-release.json"

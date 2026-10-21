@@ -50,7 +50,7 @@ impl RecordSelection {
     }
     pub fn ids(&self) -> &[String] {
         self.try_ids()
-            .expect("筛选存储读取失败；可用 try_ids 获取错误")
+            .expect("Failed to read the selection store; use try_ids to get the error")
     }
     pub fn len(&self) -> usize {
         self.stored.as_ref().map_or(self.ids.len(), |s| s.count)
@@ -138,7 +138,7 @@ impl AnalysisSession {
             .0
             .report
             .read()
-            .map_err(|_| anyhow!("分析会话读取失败"))?;
+            .map_err(|_| anyhow!("Failed to read the analysis session"))?;
         Ok(read(&report))
     }
     pub fn record(&self, id: &str) -> Result<Option<Record>> {
@@ -160,7 +160,7 @@ impl AnalysisSession {
                     [&id],
                     |r| r.get::<_, bool>(0),
                 )? {
-                    bail!("证据编号不属于当前会话");
+                    bail!("Evidence ID does not belong to the current session");
                 }
                 n += tx.execute(
                     "INSERT OR IGNORE INTO selection_refs VALUES(?1,?2,?3)",
@@ -193,7 +193,7 @@ impl AnalysisSession {
         let mut result = vec![];
         for id in ids {
             if !self.0.index.contains_key(&id) {
-                bail!("证据编号不属于当前会话");
+                bail!("Evidence ID does not belong to the current session");
             }
             if seen.insert(id.clone()) {
                 result.push(id);
@@ -207,7 +207,7 @@ impl AnalysisSession {
     }
     pub(crate) fn validate_selection(&self, selection: &RecordSelection) -> Result<()> {
         if selection.session_id != self.id() {
-            bail!("证据选择属于其他会话");
+            bail!("The evidence selection belongs to another session");
         }
         Ok(())
     }
@@ -222,7 +222,7 @@ impl AnalysisSession {
             );
         }
         if query.regex && query.expression.is_none() {
-            bail!("正则查询需要表达式");
+            bail!("Regex queries require an expression");
         }
         self.with_report(|report| {
             let mut ids = if let Some(expression) = &query.expression {
@@ -265,7 +265,7 @@ impl AnalysisSession {
             .0
             .report
             .write()
-            .map_err(|_| anyhow!("分析会话写入失败"))?;
+            .map_err(|_| anyhow!("Failed to write the analysis session"))?;
         ctx.check()?;
         report.query_matches = selection.map(|s| s.ids.clone());
         Ok(())
@@ -406,7 +406,7 @@ impl AnalysisSession {
                 Err(std::sync::TryLockError::WouldBlock) => {
                     std::thread::sleep(std::time::Duration::from_millis(20))
                 }
-                Err(_) => bail!("分析会话修改失败"),
+                Err(_) => bail!("Failed to modify the analysis session"),
             }
         }
     }
@@ -414,7 +414,7 @@ impl AnalysisSession {
 
 fn check_page(limit: usize) -> Result<()> {
     if !(1..=1000).contains(&limit) {
-        bail!("分页大小必须为 1 到 1000");
+        bail!("Page size must be between 1 and 1000");
     }
     Ok(())
 }

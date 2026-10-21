@@ -12,30 +12,30 @@ it("keeps an all category distinct from the empty all-categories filter", async 
     const [value, setValue] = useState("");
     return (
       <Select
-        label="日志类别"
+        label="Log category"
         value={value}
         onChange={(next) => {
           onChange(next);
           setValue(next);
         }}
         options={[
-          { value: "", label: "全部类别" },
+          { value: "", label: "All categories" },
           { value: "all", label: "all" },
-          { value: "login", label: "登录" },
+          { value: "login", label: "login" },
         ]}
       />
     );
   }
   const user = userEvent.setup();
   render(<Filter />);
-  const trigger = screen.getByRole("combobox", { name: "日志类别" });
-  expect(trigger).toHaveTextContent(/^全部类别$/);
+  const trigger = screen.getByRole("combobox", { name: "Log category" });
+  expect(trigger).toHaveTextContent(/^All categories$/);
   await user.click(trigger);
   await user.click(screen.getByRole("option", { name: /^all$/ }));
   expect(onChange).toHaveBeenLastCalledWith("all");
   expect(trigger).toHaveTextContent(/^all$/);
   await user.click(trigger);
-  await user.click(screen.getByRole("option", { name: /^全部类别$/ }));
+  await user.click(screen.getByRole("option", { name: /^All categories$/ }));
   expect(onChange).toHaveBeenLastCalledWith("");
-  expect(trigger).toHaveTextContent(/^全部类别$/);
+  expect(trigger).toHaveTextContent(/^All categories$/);
 });

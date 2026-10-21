@@ -144,48 +144,48 @@ impl LogQuery {
                 .as_ref()
                 .map(|v| {
                     let time = DateTime::parse_from_rfc3339(v)
-                        .map_err(|_| anyhow::anyhow!("{label}必须包含日期、时间和时区"))?;
+                        .map_err(|_| anyhow::anyhow!("{label} must include a date, time, and time zone"))?;
                     Ok(time
                         .with_timezone(&Utc)
                         .to_rfc3339_opts(SecondsFormat::Nanos, true))
                 })
                 .transpose()
         };
-        let from = parse(&self.time_from, "查询开始时间")?;
-        let until = parse(&self.time_until, "查询结束时间")?;
+        let from = parse(&self.time_from, "Query start time")?;
+        let until = parse(&self.time_until, "Query end time")?;
         if let (Some(a), Some(b)) = (&from, &until)
             && a > b
         {
-            bail!("查询结束时间不能早于开始时间");
+            bail!("The query end time cannot be earlier than the start time");
         }
         Ok((from, until))
     }
     pub(crate) fn prepare(&self) -> Result<PreparedLogQuery> {
         let (from, until) = self.bounds()?;
         if self.time_offset.is_some_and(|v| !(-840..=840).contains(&v)) {
-            bail!("无时区日志的时区偏移必须在 UTC-14:00 到 UTC+14:00 之间");
+            bail!("The time zone offset for zone-less logs must be between UTC-14:00 and UTC+14:00");
         }
         let mut conditions = Vec::new();
         let ids = self
             .event_ids
-            .split(|c: char| c == ',' || c == '，' || c == ';' || c.is_whitespace())
+            .split(|c: char| c == ',' || c == ';' || c.is_whitespace())
             .filter(|v| !v.is_empty())
             .map(|v| {
                 let id = v.parse::<u16>().map_err(|_| {
-                    anyhow::anyhow!("事件 ID 必须为 0 到 65535 的整数，多个 ID 用逗号分隔")
+                    anyhow::anyhow!("Event IDs must be integers from 0 to 65535; separate multiple IDs with commas")
                 })?;
                 Ok(id.to_string())
             })
             .collect::<Result<Vec<_>>>()?;
         if !self.event_ids.trim().is_empty() && ids.is_empty() {
-            bail!("请至少填写一个有效事件 ID");
+            bail!("Enter at least one valid event ID");
         }
         if !ids.is_empty() {
             conditions.push(("event_id".into(), ids, FieldMatch::Equals));
         }
         if let Some(level) = &self.level {
             if !["0", "1", "2", "3", "4", "5"].contains(&level.as_str()) {
-                bail!("Windows 事件级别必须为 0 到 5");
+                bail!("Windows event levels must be from 0 to 5");
             }
             conditions.push(("level".into(), vec![level.clone()], FieldMatch::Equals));
         }
@@ -208,19 +208,19 @@ impl LogQuery {
             ("method", &self.method),
         ] {
             let values = value
-                .split(|c: char| c == ',' || c == '，' || c == ';' || c.is_whitespace())
+                .split(|c: char| c == ',' || c == ';' || c.is_whitespace())
                 .filter(|v| !v.is_empty())
                 .map(str::to_lowercase)
                 .collect::<Vec<_>>();
             if !value.trim().is_empty() && values.is_empty() {
-                bail!("列表条件至少包含一个有效值");
+                bail!("List conditions must contain at least one valid value");
             }
             if field == "status"
                 && values
                     .iter()
                     .any(|v| v.parse::<u16>().map_or(true, |n| !(100..=599).contains(&n)))
             {
-                bail!("HTTP 状态码必须为 100 到 599 的整数，多个值用逗号分隔");
+                bail!("HTTP status codes must be integers from 100 to 599; separate multiple values with commas");
             }
             if !values.is_empty() {
                 conditions.push((field.into(), values, FieldMatch::Equals));
@@ -236,11 +236,11 @@ impl LogQuery {
             }
         }
         if self.fields.len() > 16 {
-            bail!("自定义字段条件最多为 16 条");
+            bail!("Custom field conditions are limited to 16");
         }
         for field in &self.fields {
             if field.field.trim().is_empty() || field.value.trim().is_empty() {
-                bail!("自定义条件须同时填写字段名和字段值");
+                bail!("Custom conditions must specify both a field name and a field value");
             }
             conditions.push((
                 field.field.trim().to_lowercase(),
@@ -432,8 +432,8 @@ mod tests {
                 ),
                 ("Event.System.Channel", "Security"),
                 ("Event.System.Computer", "Server-A"),
-                ("Event.EventData.TargetUserName", "用户甲"),
-                ("long_field", &"压缩字段".repeat(100)),
+                ("Event.EventData.TargetUserName", "user A"),
+                ("long_field", &"compressible field".repeat(100)),
             ]
             .into_iter()
             .map(|(k, v)| (k.into(), v.into()))
@@ -443,7 +443,7 @@ mod tests {
                 source_id: "source".into(),
                 position: format!("event:{i}"),
                 timestamp: time.map(String::from),
-                raw: format!("synthetic event {i} 用户甲"),
+                raw: format!("synthetic event {i} user A"),
                 status: ParseStatus::Parsed,
                 data: RecordData::Log(LogData {
                     category: "windows_event".into(),
@@ -455,7 +455,7 @@ mod tests {
     }
     fn session(stored: bool) -> AnalysisSession {
         if stored {
-            let session = ProjectService::create(ProjectInfo::new("查询测试", "合成客户")).unwrap();
+            let session = ProjectService::create(ProjectInfo::new("Log query test", "synthetic client")).unwrap();
             session
                 .0
                 .store
@@ -528,7 +528,7 @@ mod tests {
                     host: "SERVER".into(),
                     fields: vec![LogFieldQuery {
                         field: "USER".into(),
-                        value: "用户甲".into(),
+                        value: "user A".into(),
                         mode: FieldMatch::Equals,
                     }],
                     ..Default::default()
@@ -554,7 +554,7 @@ mod tests {
                     .unwrap(),
                 ["r2"]
             );
-            exact.log_query.fields[0].value = "不存在的用户".into();
+            exact.log_query.fields[0].value = "missing user".into();
             assert!(
                 session
                     .select_records(&exact, &ExecutionContext::default())
@@ -616,7 +616,7 @@ mod tests {
         for stored in [false, true] {
             let session = if stored {
                 let session =
-                    ProjectService::create(ProjectInfo::new("中间件查询", "合成客户")).unwrap();
+                    ProjectService::create(ProjectInfo::new("Middleware query", "synthetic client")).unwrap();
                 session
                     .0
                     .store

@@ -42,16 +42,16 @@ impl ConfigService {
         temporary
             .persist(path)
             .map_err(|e| e.error)
-            .context("无法保存 AI 配置")?;
+            .context("Failed to save the AI configuration")?;
         Ok(())
     }
     pub fn redacted(config: &AiConfig) -> Result<String> {
         let mut visible = config.clone();
         if !visible.api_key.is_empty() {
-            visible.api_key = "[已配置，密钥已隐藏]".into();
+            visible.api_key = "[configured; key hidden]".into();
         }
         if visible.api_key_env.starts_with("sk-") {
-            visible.api_key_env = "[密钥已隐藏，请改用 api_key]".into();
+            visible.api_key_env = "[key hidden; use api_key instead]".into();
         }
         Ok(serde_json::to_string_pretty(&visible)?)
     }

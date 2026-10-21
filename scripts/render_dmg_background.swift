@@ -60,16 +60,16 @@ for scale in [1, 2] {
               respectFlipped: true, hints: nil)
     text("Easy Analyzer", in: NSRect(x: 108, y: 38, width: 360, height: 36),
          size: 27, weight: .semibold)
-    text("应急响应 · 证据分析 · IOC 匹配", in: NSRect(x: 109, y: 77, width: 380, height: 22),
+    text("Incident response · Evidence analysis · IOC matching", in: NSRect(x: 109, y: 77, width: 380, height: 22),
          size: 13, tint: 0x64756F)
     rounded(NSRect(x: 548, y: 49, width: 164, height: 30), radius: 15,
             fill: color(0xE3F2EC))
     text("macOS · Apple Silicon", in: NSRect(x: 548, y: 56, width: 164, height: 18),
          size: 11, weight: .medium, tint: 0x277561, centered: true)
 
-    text("将 Easy Analyzer 拖入「应用程序」", in: NSRect(x: 40, y: 145, width: 680, height: 32),
+    text("Drag Easy Analyzer into Applications", in: NSRect(x: 40, y: 145, width: 680, height: 32),
          size: 21, weight: .medium, centered: true)
-    text("拖拽一次，完成安装", in: NSRect(x: 40, y: 183, width: 680, height: 24),
+    text("One drag completes the installation", in: NSRect(x: 40, y: 183, width: 680, height: 24),
          size: 13, tint: 0x718179, centered: true)
 
     for x in [130, 490] {
@@ -89,13 +89,13 @@ for scale in [1, 2] {
     color(0x00A88C).setStroke()
     arrow.stroke()
 
-    text("01  拖动应用", in: NSRect(x: 100, y: 386, width: 200, height: 20),
+    text("01  Drag the app", in: NSRect(x: 100, y: 386, width: 200, height: 20),
          size: 12, weight: .medium, tint: 0x708178, centered: true)
-    text("02  完成安装", in: NSRect(x: 460, y: 386, width: 200, height: 20),
+    text("02  Installation complete", in: NSRect(x: 460, y: 386, width: 200, height: 20),
          size: 12, weight: .medium, tint: 0x708178, centered: true)
     color(0xE0E8E3).setFill()
     NSRect(x: 44, y: 423, width: 672, height: 1).fill()
-    text("安装后，从「应用程序」或启动台打开。  ·  macOS 13.0 及以上",
+    text("After installation, open it from Applications or Launchpad.  ·  macOS 13.0 or later",
          in: NSRect(x: 40, y: 443, width: 680, height: 21),
          size: 12, tint: 0x7C8982, centered: true)
 

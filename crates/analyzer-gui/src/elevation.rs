@@ -17,7 +17,7 @@ pub fn status() -> (Option<bool>, Option<String>) {
     }
     match AnalysisService::windows_process_is_elevated() {
         Ok(value) => (Some(value), None),
-        Err(error) => (None, Some(format!("权限状态读取失败：{error:#}"))),
+        Err(error) => (None, Some(format!("Failed to read elevation status: {error:#}"))),
     }
 }
 
@@ -32,10 +32,10 @@ pub fn request_admin_window() -> Result<ElevationResult> {
             .name("uac-launch".into())
             .spawn(windows_launch)?
             .join()
-            .map_err(|_| anyhow::anyhow!("Windows 提权线程意外退出"))?
+            .map_err(|_| anyhow::anyhow!("Windows elevation thread exited unexpectedly"))?
     }
     #[cfg(not(windows))]
-    bail!("UAC 提权仅适用于 Windows")
+    bail!("UAC elevation is only available on Windows")
 }
 
 #[cfg(windows)]
@@ -71,7 +71,7 @@ fn windows_launch() -> Result<ElevationResult> {
         )
     };
     if result < 0 {
-        bail!("无法初始化 Windows 提权接口：HRESULT {result:#x}");
+        bail!("Failed to initialize the Windows elevation interface: HRESULT {result:#x}");
     }
     let _com = ComApartment;
     // The frontend cannot choose an executable, arguments or an elevated working directory.
@@ -83,7 +83,7 @@ fn windows_launch() -> Result<ElevationResult> {
         .collect();
     let directory: Vec<u16> = executable
         .parent()
-        .ok_or_else(|| anyhow::anyhow!("无法确定程序所在目录"))?
+        .ok_or_else(|| anyhow::anyhow!("Unable to determine the executable directory"))?
         .as_os_str()
         .encode_wide()
         .chain(Some(0))

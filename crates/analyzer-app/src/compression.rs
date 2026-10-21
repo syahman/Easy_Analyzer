@@ -34,11 +34,11 @@ pub(crate) fn text(value: ValueRef<'_>) -> Result<String> {
         ValueRef::Text(bytes) => Ok(std::str::from_utf8(bytes)?.to_owned()),
         ValueRef::Blob(bytes) => {
             if bytes.len() < 8 || &bytes[..4] != MAGIC {
-                bail!("不支持的项目压缩编码");
+                bail!("Unsupported project compression encoding");
             }
             let length = u32::from_le_bytes(bytes[4..8].try_into()?) as usize;
             if !(128..=MAX_TEXT).contains(&length) {
-                bail!("无效的项目压缩长度");
+                bail!("Invalid project compression length");
             }
             let mut decoder = ZlibDecoder::new(&bytes[8..]);
             let mut restored = Vec::new();
@@ -47,11 +47,11 @@ pub(crate) fn text(value: ValueRef<'_>) -> Result<String> {
                 .take(length as u64 + 1)
                 .read_to_end(&mut restored)?;
             if restored.len() != length || !decoder.get_ref().is_empty() {
-                bail!("项目压缩数据损坏或长度不一致");
+                bail!("The project compression data is corrupt or the length does not match");
             }
             Ok(String::from_utf8(restored)?)
         }
-        _ => bail!("项目文本字段类型不正确"),
+        _ => bail!("Incorrect project text field type"),
     }
 }
 
@@ -80,7 +80,7 @@ mod tests {
     use super::*;
     #[test]
     fn unicode_roundtrip_and_corruption_rejection() {
-        let original = "证据日志 example.com\n".repeat(100);
+        let original = "Evidence log example.com\n".repeat(100);
         let value = encode(original.clone()).unwrap();
         assert!(matches!(value, Value::Blob(_)));
         assert_eq!(text(ValueRef::from(&value)).unwrap(), original);
@@ -108,18 +108,18 @@ mod tests {
             assert!(text(ValueRef::Blob(&bad)).is_err());
         }
         assert_eq!(
-            encode("短文本".into()).unwrap(),
-            Value::Text("短文本".into())
+            encode("short text".into()).unwrap(),
+            Value::Text("short text".into())
         );
     }
     #[test]
     fn compressed_diagnostics_support_pages_ai_summaries_and_streaming_reports() {
         use crate::*;
-        let session = ProjectService::create(ProjectInfo::new("压缩测试", "合成客户")).unwrap();
-        let message = "中文摘要与原始诊断完整保存。".repeat(100);
+        let session = ProjectService::create(ProjectInfo::new("Compression test", "synthetic client")).unwrap();
+        let message = "Synthetic summaries and raw diagnostics are stored in full.".repeat(100);
         let diagnostic = core::Diagnostic {
             level: DiagnosticLevel::Warning,
-            source: "AI 本地整理".into(),
+            source: "AI local recap".into(),
             position: Some("ai-run:1".into()),
             message: message.clone(),
         };

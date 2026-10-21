@@ -31,13 +31,13 @@ const SHORT_OPTIONS: &[(&str, char)] = &[
     ("max_records", 'M'),
 ];
 
-const HELP_TEMPLATE: &str = "{about-with-newline}\n用法：{usage}\n\n{all-args}{after-help}";
-const COMMAND_HELP_TEMPLATE: &str = "{about-with-newline}\n用法：{usage}\n\n功能命令：\n{subcommands}\n\n通用参数：\n{options}{after-help}";
-const ROOT_EXAMPLES: &str = "如何选择命令：
-  已知是日志文件 → logs；进程采集/快照 → processes；网络抓包文件 → pcap
-  不确定文件类型，或需要混合分析 → analyze；AI 服务配置 → config
+const HELP_TEMPLATE: &str = "{about-with-newline}\nUsage: {usage}\n\n{all-args}{after-help}";
+const COMMAND_HELP_TEMPLATE: &str = "{about-with-newline}\nUsage: {usage}\n\nCommands:\n{subcommands}\n\nOptions:\n{options}{after-help}";
+const ROOT_EXAMPLES: &str = "How to pick a command:
+  Known log file → logs; process capture/snapshot → processes; network capture file → pcap
+  Unsure of the file type, or need mixed analysis → analyze; AI service configuration → config
 
-常用示例：
+Common examples:
   easy-analyzer logs cases/Security.evtx -s
   easy-analyzer logs cases/Security.evtx -s -R
   easy-analyzer logs cases/access.log -q '.env'
@@ -46,18 +46,18 @@ const ROOT_EXAMPLES: &str = "如何选择命令：
   easy-analyzer analyze cases/wtmp cases/processes.json cases/capture.pcap
   easy-analyzer config init
 
-查看某个命令的参数和示例：easy-analyzer logs -h
-默认在本地解析并运行规则；只有指定 --ai 才向配置的服务发送证据。";
+See arguments and examples for a command: easy-analyzer logs -h
+Local parsing and rules run by default; evidence is only sent to the configured service when --ai is given.";
 
 #[derive(Parser)]
-#[command(version, about = "Easy Analyzer · 日志、进程与离线网络证据分析", after_help = ROOT_EXAMPLES)]
+#[command(version, about = "Easy Analyzer · Log, process, and offline network evidence analysis", after_help = ROOT_EXAMPLES)]
 pub struct Cli {
     #[arg(
         long,
         global = true,
         value_name = "PATH",
-        help_heading = "AI 分析",
-        help = "AI 配置文件路径；省略时使用当前工作目录的 config.toml"
+        help_heading = "AI analysis",
+        help = "AI configuration file path; when omitted, the config.toml in the current working directory is used"
     )]
     pub config: Option<PathBuf>,
     #[command(subcommand)]
@@ -66,24 +66,24 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Command {
-    /// 应急响应项目：创建、续办、追加证据与备注
+    /// Incident response projects: create, reopen, append evidence and notes
     Project {
         #[command(subcommand)]
         command: ProjectCommand,
     },
-    /// 混合分析：自动识别日志、进程快照和 PCAP 文件
-    #[command(after_help = "示例：
+    /// Mixed analysis: automatically identify log, process snapshot, and PCAP files
+    #[command(after_help = "Examples:
   easy-analyzer analyze cases/Security.evtx cases/wtmp cases/processes.json cases/capture.pcap
   easy-analyzer analyze cases/access.log -j reports/case.json -H reports/case.html
   easy-analyzer analyze -p -t
 
-输入：提供文件，或使用 --auto-load / --live-processes；文件名 - 表示标准输入。
---format 强制指定所有输入的格式，混合文件通常保持 auto。
---auto-load 在 Windows/Linux 本机加载日志；macOS 请指定离线文件。
-筛选只控制终端记录与 AI matches 范围；JSON/HTML 保留完整记录及 query_matches。")]
+Input: provide files, or use --auto-load / --live-processes; file name - means standard input.
+--format forces the format for all inputs; mixed files usually keep auto.
+--auto-load loads logs on the local Windows/Linux machine; on macOS provide offline files.
+Filtering only controls terminal records and the AI matches scope; JSON/HTML keep full records plus query_matches.")]
     Analyze(AnalyzeArgs),
-    /// 日志分析：EVTX、Linux 登录日志、SSH 和 Web 日志
-    #[command(after_help = "示例：
+    /// Log analysis: EVTX, Linux login logs, SSH, and web logs
+    #[command(after_help = "Examples:
   easy-analyzer logs cases/Security.evtx -s
   easy-analyzer logs cases/wtmp cases/btmp
   easy-analyzer logs cases/access.log -q 'union.*select|\\.env' -r
@@ -91,46 +91,46 @@ pub enum Command {
   cat cases/auth.log | easy-analyzer logs - -f text
   easy-analyzer logs cases/Security.evtx -a -S suspicious
 
-输入：提供日志文件或 --auto-load；文件名 - 表示标准输入。
---auto-load 只加载当前 Windows/Linux 主机的日志；macOS 请指定离线文件。
-本地规则自动运行；--suspicious 选择规则引用的记录，与 --query 同用时取交集。
-JSON/HTML 保留完整记录；筛选结果 ID 位于 query_matches。")]
+Input: provide log files or --auto-load; file name - means standard input.
+--auto-load only loads logs of the current Windows/Linux host; on macOS provide offline files.
+Local rules run automatically; --suspicious selects records referenced by rules, intersecting with --query when both are used.
+JSON/HTML keep full records; filtered result IDs appear in query_matches.")]
     Logs(LogArgs),
-    /// 进程分析：无文件时采集本机，有文件时导入 JSON 快照
-    #[command(after_help = "示例：
+    /// Process analysis: collects the local machine without files; imports JSON snapshots when files are given
+    #[command(after_help = "Examples:
   easy-analyzer processes -t
   easy-analyzer processes cases/processes.json -q powershell
   easy-analyzer processes cases/processes.json -a -S suspicious
   easy-analyzer processes -j reports/processes.json
 
-输入：不提供文件时采集当前主机；文件输入须为进程 JSON 数组或本工具报告。
-可提供多个快照；文件名 - 表示从标准输入读取 JSON。
-终端默认显示进程树；--tree 明确请求树形显示。
-查询/筛选只控制终端记录与 AI matches 范围；JSON/HTML 保留完整记录。")]
+Input: collects the current host when no files are given; file input must be a process JSON array or a report from this tool.
+Multiple snapshots can be provided; file name - means reading JSON from standard input.
+The terminal shows the process tree by default; --tree explicitly requests the tree view.
+Query/filter only control terminal records and the AI matches scope; JSON/HTML keep full records.")]
     Processes(ProcessArgs),
-    /// 网络分析：导入 PCAP/PCAPNG，解析包与网络会话
-    #[command(after_help = "示例：
+    /// Network analysis: import PCAP/PCAPNG and parse packets and network sessions
+    #[command(after_help = "Examples:
   easy-analyzer pcap cases/capture.pcapng
   easy-analyzer pcap cases/capture.pcap -q '/.env'
   easy-analyzer pcap cases/capture.pcap -a
   easy-analyzer pcap cases/capture.pcap -a -P
 
-输入：提供一个或多个 PCAP/PCAPNG 文件；文件名 - 表示标准输入。
-本命令离线分析已有抓包文件，不启动实时抓包。
-AI 默认只接收包摘要；--include-payload 额外发送原始包与载荷。
-查询/筛选只控制终端记录与 AI matches 范围；JSON/HTML 保留完整记录。")]
+Input: one or more PCAP/PCAPNG files; file name - means standard input.
+This command analyzes existing capture files offline and does not start live capture.
+By default AI only receives packet summaries; --include-payload additionally sends raw packets and payloads.
+Query/filter only control terminal records and the AI matches scope; JSON/HTML keep full records.")]
     Pcap(PcapArgs),
-    /// AI 配置：创建模板、查看设置、检查服务
-    #[command(after_help = "配置步骤：
+    /// AI configuration: create the template, view settings, check the service
+    #[command(after_help = "Configuration steps:
   1. easy-analyzer config init
-  2. 默认使用 DeepSeek deepseek-flash；在 config.toml 中填写 api_key
+  2. DeepSeek deepseek-flash is the default; fill in api_key in config.toml
   3. easy-analyzer config check
   4. easy-analyzer logs cases/Security.evtx -a
 
-自定义配置路径：easy-analyzer -c settings.toml config init
-所有平台默认：当前工作目录的 config.toml（运行命令时所在的目录）
-其他 AI 服务可修改 base_url、model 和 api_key。
-config check 会发送一个不含项目证据的小请求，可能产生服务费用。")]
+Custom config path: easy-analyzer -c settings.toml config init
+Default on all platforms: the config.toml in the current working directory (the directory where the command runs)
+Other AI services can change base_url, model, and api_key.
+config check sends a small request without project evidence and may incur service charges.")]
     Config {
         #[command(subcommand)]
         command: ConfigCommand,
@@ -139,7 +139,7 @@ config check 会发送一个不含项目证据的小请求，可能产生服务�
 
 #[derive(Args)]
 pub struct ProjectMetadata {
-    #[arg(long, help = "项目名称；新建时默认使用客户单位")]
+    #[arg(long, help = "Project name; defaults to the client organization when creating")]
     pub name: Option<String>,
     #[arg(long)]
     pub client: Option<String>,
@@ -156,19 +156,19 @@ pub struct ProjectMetadata {
 }
 #[derive(Subcommand)]
 pub enum ProjectCommand {
-    /// 创建并保存空项目，客户单位必填，名称默认为客户单位
+    /// Create and save an empty project; the client organization is required, and the name defaults to it
     Create {
         path: PathBuf,
         #[command(flatten)]
         info: ProjectMetadata,
     },
-    /// 打开已有项目，不重新解析或自动发送 AI
+    /// Open an existing project without re-parsing or sending AI automatically
     Open {
         path: PathBuf,
         #[command(flatten)]
         common: CommonArgs,
     },
-    /// 搜索本机最近打开的项目
+    /// Search recently opened projects on this machine
     List {
         #[arg(long, default_value = "")]
         search: String,
@@ -179,19 +179,19 @@ pub enum ProjectCommand {
         #[arg(long)]
         until: Option<String>,
     },
-    /// 向项目追加证据，保存回项目文件
+    /// Append evidence to the project and save it back to the project file
     Import {
         path: PathBuf,
         #[command(flatten)]
         args: AnalyzeArgs,
     },
-    /// 修改基本资料，保存回项目文件
+    /// Edit basic information and save it back to the project file
     Edit {
         path: PathBuf,
         #[command(flatten)]
         info: ProjectMetadata,
     },
-    /// 写入或读取证据备注；空字符串删除备注
+    /// Write or read evidence notes; an empty string deletes the note
     Note {
         path: PathBuf,
         #[arg(long)]
@@ -203,11 +203,11 @@ pub enum ProjectCommand {
 
 #[derive(Subcommand)]
 pub enum ConfigCommand {
-    /// 创建配置模板；在 api_key 字段填写密钥，已存在时返回错误
+    /// Create the configuration template; fill in the api_key field; returns an error if it already exists
     Init,
-    /// 显示配置路径和当前设置（密钥隐藏）
+    /// Show the configuration path and current settings (key hidden)
     Show,
-    /// 请求 AI 服务，检查连接和结构化 JSON 响应
+    /// Request the AI service to check connectivity and structured JSON responses
     Check,
 }
 
@@ -227,55 +227,55 @@ pub enum AiScope {
 #[derive(Args)]
 #[command(group(ArgGroup::new("selection").args(["query", "suspicious"]).multiple(true)))]
 pub struct CommonArgs {
-    #[arg(long, value_name = "PATH", help = "打开应急响应项目，并追加本次证据")]
+    #[arg(long, value_name = "PATH", help = "Open an incident response project and append this evidence")]
     pub project: Option<PathBuf>,
-    #[arg(long, value_name = "PATH", help = "手动保存项目为 .eair 文件")]
+    #[arg(long, value_name = "PATH", help = "Manually save a project as a .eair file")]
     pub save_project: Option<PathBuf>,
-    #[arg(long, help = "新项目名称；默认使用客户单位")]
+    #[arg(long, help = "New project name; defaults to the client organization")]
     pub project_name: Option<String>,
-    #[arg(long, help = "客户单位；保存新项目时必填")]
+    #[arg(long, help = "Client organization; required when saving a new project")]
     pub client: Option<String>,
-    #[arg(long, help = "响应开始时间，RFC3339 格式，包含时区")]
+    #[arg(long, help = "Response start time in RFC3339 format, including the time zone")]
     pub response_start: Option<String>,
-    #[arg(long, action=ArgAction::Append, value_name="FILE", help="追加 TXT/CSV IOC 文件，可重复")]
+    #[arg(long, action=ArgAction::Append, value_name="FILE", help="Append TXT/CSV IOC files; repeatable")]
     pub ioc: Vec<PathBuf>,
-    #[arg(long, action=ArgAction::Append, value_name="VALUE", help="手动添加 IOC，可重复")]
+    #[arg(long, action=ArgAction::Append, value_name="VALUE", help="Add IOCs manually; repeatable")]
     pub ioc_value: Vec<String>,
-    #[arg(long, help = "从标准输入读取 IOC 清单，与证据标准输入互斥")]
+    #[arg(long, help = "Read the IOC list from standard input; mutually exclusive with evidence stdin")]
     pub ioc_stdin: bool,
     #[arg(
         long,
         requires = "ioc_stdin",
-        help = "标准输入 IOC 使用 type,value,note CSV"
+        help = "Stdin IOCs use type,value,note CSV"
     )]
     pub ioc_stdin_csv: bool,
-    #[arg(long, help = "域名只匹配本身，不包含子域名")]
+    #[arg(long, help = "Domains match only themselves, without subdomains")]
     pub ioc_exact_domain: bool,
 
     #[arg(
         long,
         value_name = "TEXT",
-        help_heading = "查询与筛选",
-        help = "搜索原始内容及解析字段；不区分大小写"
+        help_heading = "Query and filter",
+        help = "Search raw content and parsed fields; case-insensitive"
     )]
     query: Option<String>,
     #[arg(
         long,
         requires = "query",
-        help_heading = "查询与筛选",
-        help = "将 --query 按正则表达式匹配"
+        help_heading = "Query and filter",
+        help = "Match --query as a regular expression"
     )]
     regex: bool,
     #[arg(
         long,
-        help_heading = "查询与筛选",
-        help = "一键查询默认规则命中的高危、中危及低危证据；与 --query 同用取交集"
+        help_heading = "Query and filter",
+        help = "Query with one switch the high, medium, and low severity evidence hit by default rules; intersects when combined with --query"
     )]
     suspicious: bool,
     #[arg(
         long,
-        help_heading = "AI 分析",
-        help = "主动发送证据到配置的 AI 服务进行分析"
+        help_heading = "AI analysis",
+        help = "Actively send evidence to the configured AI service for analysis"
     )]
     ai: bool,
     #[arg(
@@ -285,8 +285,8 @@ pub struct CommonArgs {
         requires = "ai",
         requires_if("matches", "selection"),
         value_name = "SCOPE",
-        help_heading = "AI 分析",
-        help = "发送范围：all=全部，matches=筛选，suspicious=规则证据"
+        help_heading = "AI analysis",
+        help = "Send scope: all=everything, matches=filtered, suspicious=rule evidence"
     )]
     ai_scope: AiScope,
     #[arg(
@@ -294,59 +294,59 @@ pub struct CommonArgs {
         value_enum,
         default_value = "text",
         value_name = "TYPE",
-        help_heading = "报告输出",
-        help = "主输出格式：text=终端摘要，json=完整 JSON，html=保存完整 HTML 文件"
+        help_heading = "Report output",
+        help = "Primary output format: text=terminal summary, json=full JSON, html=saves a full HTML file"
     )]
     output: Output,
     #[arg(
         long,
         value_name = "PATH",
-        help_heading = "报告输出",
-        help = "主输出文件路径；省略时 text/json 输出到终端，html 自动保存为 report.html（已有文件时另取名称）"
+        help_heading = "Report output",
+        help = "Primary output file path; when omitted text/json go to the terminal and html auto-saves as report.html (with an alternate name if the file exists)"
     )]
     out: Option<PathBuf>,
     #[arg(
         long,
         value_name = "PATH",
-        help_heading = "报告输出",
-        help = "额外保存完整 JSON 报告"
+        help_heading = "Report output",
+        help = "Additionally save a full JSON report"
     )]
     json_out: Option<PathBuf>,
     #[arg(
         long,
         value_name = "PATH",
-        help_heading = "报告输出",
-        help = "额外保存独立 HTML 报告"
+        help_heading = "Report output",
+        help = "Additionally save a standalone HTML report"
     )]
     html_out: Option<PathBuf>,
     #[arg(
         long,
         default_value_t = 50,
         value_name = "N",
-        help_heading = "报告输出",
-        help = "终端各区来源、发现、记录、进程树、诊断及详情引用上限；0 显示全部，不裁剪 JSON/HTML"
+        help_heading = "Report output",
+        help = "Terminal caps per section for sources, findings, records, the process tree, diagnostics, and detail references; 0 shows all and does not trim JSON/HTML"
     )]
     limit: usize,
     #[arg(
         long,
-        help_heading = "报告输出",
-        help = "显示发现解释、规则 ID、置信度、证据引用和原始记录；默认精简展示"
+        help_heading = "Report output",
+        help = "Show finding explanations, rule IDs, confidence, evidence references, and raw records; defaults to the compact view"
     )]
     raw: bool,
     #[arg(
         long,
         default_value_t = 512,
         value_name = "MB",
-        help_heading = "输入限制",
-        help = "每个输入文件大小上限（MiB）；超出时报错"
+        help_heading = "Input limits",
+        help = "Per-input file size cap (MiB); exceeding it is an error"
     )]
     max_file_mb: u64,
     #[arg(
         long,
         default_value_t = 1_000_000,
         value_name = "N",
-        help_heading = "输入限制",
-        help = "每个输入的记录数上限；超出时报错，不静默截断"
+        help_heading = "Input limits",
+        help = "Record count cap per input; exceeding it is an error instead of silently truncating"
     )]
     max_records: usize,
 }
@@ -357,21 +357,21 @@ pub struct LogLoadingArgs {
         long,
         conflicts_with = "web_format_file",
         value_name = "FORMAT",
-        help_heading = "Web 日志格式",
-        help = "Apache LogFormat / Nginx log_format 定义或格式字符串"
+        help_heading = "Web log format",
+        help = "Apache LogFormat / Nginx log_format definition or format string"
     )]
     web_format: Option<String>,
     #[arg(
         long,
         value_name = "PATH",
-        help_heading = "Web 日志格式",
-        help = "从文件读取 Apache/Nginx 格式定义"
+        help_heading = "Web log format",
+        help = "Read an Apache/Nginx format definition from a file"
     )]
     web_format_file: Option<PathBuf>,
     #[arg(
         long,
-        help_heading = "本机采集",
-        help = "加载当前 Windows/Linux 主机常见日志；macOS 不支持"
+        help_heading = "Local collection",
+        help = "Load common logs of the current Windows/Linux host; not supported on macOS"
     )]
     auto_load: bool,
     #[arg(
@@ -379,8 +379,8 @@ pub struct LogLoadingArgs {
         default_value = "cases/captured",
         requires = "auto_load",
         value_name = "DIR",
-        help_heading = "本机采集",
-        help = "Windows 自动加载时，保存 wevtutil 导出的 EVTX"
+        help_heading = "Local collection",
+        help = "When auto-loading on Windows, saves the EVTX exported by wevtutil"
     )]
     evidence_dir: PathBuf,
 }
@@ -390,25 +390,25 @@ pub struct LogLoadingArgs {
 pub struct AnalyzeArgs {
     #[arg(
         value_name = "FILES",
-        help_heading = "输入文件",
-        help = "日志、进程快照、PCAP 文件；可混合多个文件，- 表示标准输入"
+        help_heading = "Input files",
+        help = "Logs, process snapshots, and PCAP files; multiple files can be mixed, - means standard input"
     )]
     files: Vec<PathBuf>,
-    #[arg(long, default_value = "auto", value_name = "TYPE", help_heading = "输入文件", value_parser = all_formats(), help = "输入格式；auto 自动识别，指定其他值会作用于所有文件")]
+    #[arg(long, default_value = "auto", value_name = "TYPE", help_heading = "Input files", value_parser = all_formats(), help = "Input format; auto detects it, and another value applies to all files")]
     format: InputFormat,
     #[command(flatten)]
     loading: LogLoadingArgs,
     #[command(flatten)]
     common: CommonArgs,
-    #[arg(long, help_heading = "本机采集", help = "把当前主机进程加入分析")]
+    #[arg(long, help_heading = "Local collection", help = "Include the current host's processes in the analysis")]
     live_processes: bool,
-    #[arg(long, help_heading = "报告输出", help = "在终端报告中显示进程树")]
+    #[arg(long, help_heading = "Report output", help = "Show the process tree in the terminal report")]
     tree: bool,
     #[arg(
         long,
         requires = "ai",
-        help_heading = "AI 分析",
-        help = "发送 PCAP 原始包与载荷；须与 --ai 同用"
+        help_heading = "AI analysis",
+        help = "Send raw PCAP packets and payloads; must be combined with --ai"
     )]
     include_payload: bool,
 }
@@ -418,11 +418,11 @@ pub struct AnalyzeArgs {
 pub struct LogArgs {
     #[arg(
         value_name = "FILES",
-        help_heading = "输入文件",
-        help = "一个或多个日志文件；- 表示标准输入"
+        help_heading = "Input files",
+        help = "One or more log files; - means standard input"
     )]
     files: Vec<PathBuf>,
-    #[arg(long, default_value = "auto", value_name = "TYPE", help_heading = "输入文件", value_parser = log_formats(), help = "日志格式；auto 自动识别，未知名称的二进制登录日志需指定")]
+    #[arg(long, default_value = "auto", value_name = "TYPE", help_heading = "Input files", value_parser = log_formats(), help = "Log format; auto detects it, binary login logs with unknown names must specify it")]
     format: InputFormat,
     #[command(flatten)]
     loading: LogLoadingArgs,
@@ -434,16 +434,16 @@ pub struct LogArgs {
 pub struct ProcessArgs {
     #[arg(
         value_name = "FILES",
-        help_heading = "输入文件",
-        help = "进程 JSON 快照或本工具报告；省略时采集本机，- 表示标准输入"
+        help_heading = "Input files",
+        help = "Process JSON snapshots or reports from this tool; collects the local machine when omitted, - means standard input"
     )]
     files: Vec<PathBuf>,
     #[command(flatten)]
     common: CommonArgs,
     #[arg(
         long,
-        help_heading = "报告输出",
-        help = "显示进程树（本命令终端输出默认启用）"
+        help_heading = "Report output",
+        help = "Show the process tree (enabled by default for this command's terminal output)"
     )]
     tree: bool,
 }
@@ -453,8 +453,8 @@ pub struct PcapArgs {
     #[arg(
         required = true,
         value_name = "FILES",
-        help_heading = "输入文件",
-        help = "一个或多个 PCAP/PCAPNG 文件；- 表示标准输入"
+        help_heading = "Input files",
+        help = "One or more PCAP/PCAPNG files; - means standard input"
     )]
     files: Vec<PathBuf>,
     #[command(flatten)]
@@ -462,8 +462,8 @@ pub struct PcapArgs {
     #[arg(
         long,
         requires = "ai",
-        help_heading = "AI 分析",
-        help = "额外发送原始包与载荷；须与 --ai 同用"
+        help_heading = "AI analysis",
+        help = "Also send raw packets and payloads; must be combined with --ai"
     )]
     include_payload: bool,
 }
@@ -488,7 +488,7 @@ fn log_formats() -> impl TypedValueParser<Value = InputFormat> {
         .map(|value| value.parse().expect("supported log format"))
 }
 
-/// Use the same readable layout and localized help on every command level.
+/// Use the same readable layout and English help on every command level.
 pub fn command() -> clap::Command {
     fn configure(command: clap::Command) -> clap::Command {
         let has_subcommands = command.get_subcommands().next().is_some();
@@ -506,8 +506,8 @@ pub fn command() -> clap::Command {
                     .short('h')
                     .long("help")
                     .action(ArgAction::Help)
-                    .help("显示当前命令的帮助与示例")
-                    .help_heading("通用选项"),
+                    .help("Show help and examples for the current command")
+                    .help_heading("General options"),
             )
             .mut_args(|arg| {
                 let arg = if let Some((_, short)) = SHORT_OPTIONS
@@ -545,7 +545,7 @@ pub fn command() -> clap::Command {
                     _ => 90,
                 };
                 let arg = if arg.get_id() == "files" {
-                    arg.value_name("文件")
+                    arg.value_name("FILES")
                 } else {
                     arg
                 };
@@ -559,8 +559,8 @@ pub fn command() -> clap::Command {
             .long("version")
             .action(ArgAction::Version)
             .display_order(91)
-            .help("显示版本")
-            .help_heading("通用选项"),
+            .help("Show version")
+            .help_heading("General options"),
     )
 }
 

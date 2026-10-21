@@ -141,11 +141,11 @@ impl ExportPlan {
             };
             let mut saved_paths = vec![];
             if let Some(path) = &plan.json_path {
-                save_file(path, json.as_deref().context("无法生成 JSON 报告")?)?;
+                save_file(path, json.as_deref().context("Unable to generate the JSON report")?)?;
                 saved_paths.push(path.clone());
             }
             if let Some(path) = &plan.html_path {
-                save_file(path, html.as_deref().context("无法生成 HTML 报告")?)?;
+                save_file(path, html.as_deref().context("Unable to generate the HTML report")?)?;
                 saved_paths.push(path.clone());
             }
             let primary = match plan.format {
@@ -155,8 +155,8 @@ impl ExportPlan {
                     plan.render.tree,
                     plan.render.raw,
                 ),
-                OutputFormat::Json => json.context("无法生成 JSON 报告")?,
-                OutputFormat::Html => html.context("无法生成 HTML 报告")?,
+                OutputFormat::Json => json.context("Unable to generate the JSON report")?,
+                OutputFormat::Html => html.context("Unable to generate the HTML report")?,
             };
             let stdout = if let Some(path) = &plan.path {
                 save_file(path, &primary)?;
@@ -254,7 +254,7 @@ impl ExportPlan {
                     })
                 })
                 .find(|p| !p.exists())
-                .context("无法分配 HTML 报告文件名")?;
+                .context("Unable to allocate an HTML report file name")?;
             outputs.push((path, OutputFormat::Html));
         }
         validate_output_paths(
@@ -264,7 +264,7 @@ impl ExportPlan {
         let mut saved_paths = Vec::new();
         for (path, format) in outputs {
             let target = resolved_path(&path)?;
-            let parent = target.parent().context("输出目录不存在")?;
+            let parent = target.parent().context("The output directory does not exist")?;
             fs::create_dir_all(parent)?;
             let mut temporary = tempfile::NamedTempFile::new_in(parent)?;
             let mut plan = self.clone();
@@ -297,7 +297,7 @@ fn save_file(path: &Path, data: &str) -> Result<()> {
     if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
         fs::create_dir_all(parent)?;
     }
-    fs::write(path, data).with_context(|| format!("无法写入报告 {}", path.display()))
+    fs::write(path, data).with_context(|| format!("Unable to write the report {}", path.display()))
 }
 fn save_html_auto(data: &str) -> Result<PathBuf> {
     for index in 1..=10_000 {
@@ -313,16 +313,16 @@ fn save_html_auto(data: &str) -> Result<PathBuf> {
         {
             Ok(mut file) => {
                 file.write_all(data.as_bytes())
-                    .with_context(|| format!("无法写入报告 {}", path.display()))?;
+                    .with_context(|| format!("Unable to write the report {}", path.display()))?;
                 return Ok(path);
             }
             Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
             Err(error) => {
-                return Err(error).with_context(|| format!("无法创建报告 {}", path.display()));
+                return Err(error).with_context(|| format!("Unable to create the report {}", path.display()));
             }
         }
     }
-    bail!("无法自动分配 HTML 报告文件名，请用 -O 指定输出路径。")
+    bail!("Unable to allocate an HTML report file name automatically; specify the output path with -O.")
 }
 pub(crate) fn resolved_path(path: &Path) -> Result<PathBuf> {
     let absolute = if path.is_absolute() {
@@ -346,10 +346,10 @@ pub(crate) fn resolved_path(path: &Path) -> Result<PathBuf> {
         tail.push(
             ancestor
                 .file_name()
-                .context("无法解析报告输出路径")?
+                .context("Unable to resolve the report output path")?
                 .to_os_string(),
         );
-        ancestor = ancestor.parent().context("无法解析报告输出的父目录")?;
+        ancestor = ancestor.parent().context("Unable to resolve the parent directory of the report output")?;
     }
     let mut result = ancestor.canonicalize()?;
     for part in tail.into_iter().rev() {
@@ -363,11 +363,11 @@ pub fn validate_output_paths(outputs: &[PathBuf], protected: &[PathBuf]) -> Resu
     for output in outputs {
         let normalized = resolved_path(output)?;
         if !seen.insert(normalized.clone()) {
-            bail!("各输出路径必须不同");
+            bail!("Output paths must be different");
         }
         for input in protected {
             if normalized == resolved_path(input)? {
-                bail!("输出会覆盖输入文件或配置：{}", output.display());
+                bail!("The output would overwrite an input file or configuration: {}", output.display());
             }
             #[cfg(unix)]
             {
@@ -376,7 +376,7 @@ pub fn validate_output_paths(outputs: &[PathBuf], protected: &[PathBuf]) -> Resu
                     && a.dev() == b.dev()
                     && a.ino() == b.ino()
                 {
-                    bail!("输出会覆盖输入文件或配置的硬链接");
+                    bail!("The output would overwrite a hard link to an input file or configuration");
                 }
             }
         }

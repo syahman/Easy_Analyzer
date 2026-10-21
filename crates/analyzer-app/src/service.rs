@@ -33,25 +33,25 @@ impl AnalysisService {
             && !request.live_processes
             && request.mode != AnalysisMode::Processes
         {
-            bail!("请提供输入文件，或指定 --auto-load / --live-processes");
+            bail!("Provide an input file, or specify --auto-load / --live-processes");
         }
         if request.mode == AnalysisMode::Pcap && (request.auto_load || request.live_processes) {
-            bail!("pcap 命令只接受离线抓包文件");
+            bail!("The pcap command only accepts offline capture files");
         }
         if request.mode == AnalysisMode::Processes && request.auto_load {
-            bail!("请在 logs/analyze 命令中使用 --auto-load");
+            bail!("Use --auto-load in the logs/analyze command");
         }
         if request.ingest.max_file_bytes == 0 || request.ingest.max_records == 0 {
-            bail!("文件大小和记录数上限必须大于 0");
+            bail!("The file size and record count limits must be greater than 0");
         }
         if request.web_format_file.is_some() && request.ingest.web_format.is_some() {
-            bail!("Web 格式字符串和格式文件只能指定一个");
+            bail!("Specify either a web format string or a format file, not both");
         }
         if let Some(query) = &request.query
             && query.regex
             && query.expression.is_none()
         {
-            bail!("正则查询需要表达式");
+            bail!("Regex queries require an expression");
         }
         if request
             .ai
@@ -62,7 +62,7 @@ impl AnalysisService {
                 .as_ref()
                 .is_none_or(|q| q.expression.is_none() && !q.suspicious)
         {
-            bail!("--ai-scope matches 需要同时提供 --query 或 --suspicious");
+            bail!("--ai-scope matches also requires --query or --suspicious");
         }
         Ok(())
     }
@@ -127,7 +127,7 @@ impl AnalysisService {
                         report.error(
                             input.label(),
                             None,
-                            "该输入属于进程快照或抓包文件，请使用 analyze 自动分类",
+                            "This input is a process snapshot or capture file; use analyze for automatic classification",
                         );
                     } else {
                         report.merge(outcome.report);
@@ -301,7 +301,7 @@ impl AnalysisService {
                     } else {
                         let c = db.lock()?;
                         let id: Option<i64> = crate::storage::Database::get(&c, "query_selection")?;
-                        let id = id.ok_or_else(|| anyhow!("AI matches 需要查询结果"))?;
+                        let id = id.ok_or_else(|| anyhow!("AI matches requires query results"))?;
                         let count =
                             c.query_row("SELECT count FROM selections WHERE id=?1", [id], |r| {
                                 r.get::<_, i64>(0)
@@ -327,7 +327,7 @@ impl AnalysisService {
             };
             let key = selection
                 .stored_id(ctx)?
-                .ok_or_else(|| anyhow!("筛选不可用"))?;
+                .ok_or_else(|| anyhow!("Filter unavailable"))?;
             let mut scenes = [false; 6];
             let mut unparsed = false;
             {
@@ -392,7 +392,7 @@ impl AnalysisService {
                     let ids = selection
                         .map(|s| s.ids.clone())
                         .or_else(|| report.query_matches.clone())
-                        .ok_or_else(|| anyhow!("AI matches 需要查询结果"))?;
+                        .ok_or_else(|| anyhow!("AI matches requires query results"))?;
                     Some(ids.into_iter().collect::<std::collections::HashSet<_>>())
                 }
                 AiScope::Suspicious => Some(session.0.local_suspicious.clone()),
@@ -422,7 +422,7 @@ impl AnalysisService {
         if let Some(revision) = prepared.revision
             && crate::ProjectService::status(&session)?.revision != revision
         {
-            bail!("项目已变化，请重新计算 AI 发送预览");
+            bail!("The project has changed; recompute the AI send preview");
         }
         let result = core::ai::analyze_prepared_with_context(prepared.prepared, ctx, |_, _, _| {});
         Self::finish_ai(&session, result, ctx)
@@ -455,7 +455,7 @@ impl AnalysisService {
                             "INSERT INTO diagnostics(json) VALUES(?1)",
                             [crate::storage::packed_json(&core::Diagnostic {
                                 level: DiagnosticLevel::Warning,
-                                source: "AI 本地整理".into(),
+                                source: "AI local recap".into(),
                                 position: Some(format!("ai-run:{run}")),
                                 message: summary,
                             })?],
@@ -495,7 +495,7 @@ impl AnalysisService {
                         level: DiagnosticLevel::Error,
                         source: "AI".into(),
                         position: None,
-                        message: "AI 分析已取消，保留已接受结果，范围未完成。".into(),
+                        message: "AI analysis cancelled; accepted results are retained; the scope is incomplete.".into(),
                     })?],
                 )?;
             }
@@ -516,7 +516,7 @@ impl AnalysisService {
             .0
             .report
             .write()
-            .map_err(|_| anyhow!("分析会话写入失败"))?;
+            .map_err(|_| anyhow!("Failed to write the analysis session"))?;
         let mut cancelled = ctx.cancellation.is_cancelled();
         let mut failed = false;
         match result {
@@ -532,7 +532,7 @@ impl AnalysisService {
                 }
                 if let Some(summary) = analysis.local_summary.take() {
                     let position = format!("ai-run:{}", report.ai_runs.len() + 1);
-                    report.warn("AI 本地整理", Some(position), summary);
+                    report.warn("AI local recap", Some(position), summary);
                 }
                 report.findings.extend(analysis.findings);
                 report.ai_runs.push(analysis.run);
@@ -588,12 +588,12 @@ fn add_cancelled(report: &mut AnalysisReport) {
     if !report
         .diagnostics
         .iter()
-        .any(|d| d.message.contains("已取消"))
+        .any(|d| d.message.contains("cancelled"))
     {
         report.error(
             "task",
             None,
-            "分析已取消；已完成结果保留，当前分析范围不完整。",
+            "Analysis cancelled; completed results are retained; the current analysis scope is incomplete.",
         );
     }
 }
@@ -602,7 +602,7 @@ fn mark_cancelled(session: &AnalysisSession) -> Result<()> {
         .0
         .report
         .write()
-        .map_err(|_| anyhow!("分析会话写入失败"))?;
+        .map_err(|_| anyhow!("Failed to write the analysis session"))?;
     add_cancelled(&mut report);
     Ok(())
 }

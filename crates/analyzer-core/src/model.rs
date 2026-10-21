@@ -114,11 +114,11 @@ impl Severity {
     }
     pub fn label(&self) -> &'static str {
         match self {
-            Self::Info => "信息",
-            Self::Low => "低危",
-            Self::Medium => "中危",
-            Self::High => "高危",
-            Self::Critical => "严重",
+            Self::Info => "Info",
+            Self::Low => "Low",
+            Self::Medium => "Medium",
+            Self::High => "High",
+            Self::Critical => "Critical",
         }
     }
 }

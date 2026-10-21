@@ -55,12 +55,12 @@ export function AiHistory({
     <div className="history-panel">
       <button className="history-toggle" onClick={() => setOpen(!open)}>
         <History size={14} />
-        <span>运行历史</span>
+        <span>Run history</span>
         <span className="small-badge">{runs?.total || 0}</span>
         {runs?.items[0] && (
           <small>
-            最近一次：{runs.items[0].completed}/{runs.items[0].batches} 批 ·{" "}
-            {number(runs.items[0].analyzed)} 条
+            Latest: {runs.items[0].completed}/{runs.items[0].batches} batches ·{" "}
+            {number(runs.items[0].analyzed)} records
           </small>
         )}
         <ChevronDown size={13} className={open ? "rotated" : ""} />
@@ -82,8 +82,8 @@ export function AiHistory({
                 <strong>#{run.index + 1}</strong>
                 <span>{run.model}</span>
                 <small>
-                  已分析 {number(run.analyzed)}/{number(run.selected)} 条 ·{" "}
-                  {run.completed}/{run.batches} 批
+                  Analyzed {number(run.analyzed)}/{number(run.selected)} records
+                  · {run.completed}/{run.batches} batches
                 </small>
                 <ChevronDown size={12} />
               </button>
@@ -98,10 +98,10 @@ export function AiHistory({
                     batches?.items.map((batch) => (
                       <details key={batch.index}>
                         <summary>
-                          批次 {batch.index} · {batch.evidence_ids.length} 条 ·{" "}
-                          {batch.attempts.length} 次回复
+                          Batch {batch.index} · {batch.evidence_ids.length}{" "}
+                          records · {batch.attempts.length} replies
                           {batch.error && (
-                            <span className="warning"> 未完成</span>
+                            <span className="warning"> incomplete</span>
                           )}
                         </summary>
                         {batch.error && (
@@ -109,9 +109,9 @@ export function AiHistory({
                         )}
                         {batch.attempts.map((a, i) => (
                           <details className="raw-reply" key={i}>
-                            <summary>原始回复 {i + 1}</summary>
+                            <summary>Raw reply {i + 1}</summary>
                             {a.error && <p className="warning">{a.error}</p>}
-                            <pre>{a.response || "没有回复内容"}</pre>
+                            <pre>{a.response || "No reply content"}</pre>
                           </details>
                         ))}
                       </details>
@@ -119,7 +119,7 @@ export function AiHistory({
                   )}
                   {batches && (
                     <Pagination
-                      label="AI 批次"
+                      label="AI batch"
                       offset={batches.offset}
                       total={batches.total}
                       limit={10}
@@ -131,10 +131,12 @@ export function AiHistory({
               )}
             </div>
           ))}
-          {!runs?.items.length && <p className="muted">尚未运行 AI 分析。</p>}
+          {!runs?.items.length && (
+            <p className="muted">No AI analysis has run yet.</p>
+          )}
           {runs && (
             <Pagination
-              label="AI 运行"
+              label="AI runs"
               offset={runs.offset}
               total={runs.total}
               limit={20}
