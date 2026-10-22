@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.2 — 2026-10-22
+
+- Translated the entire CLI, desktop GUI, and report output to English: command-line help, progress stages, diagnostics, HTML/JSON report labels, GUI dialogs and navigation, the 48 incident response command reference entries, and AI prompts. Cross-crate report strings, task statuses, and cancellation wording are consistent across CLI, GUI, core, and app.
+- Translated README, CHANGELOG, AGENTS, `docs/PROJECTS.md`, CI release notes, and developer scripts to English; removed the redundant `README.en.md` since the main README is now the English version.
+- Fixed the Tauri `beforeDevCommand` / `beforeBuildCommand` working directory for `@tauri-apps/cli` 2.x, so `npm run tauri dev` and `npm run tauri build` work from the frontend folder.
+- Updated all affected fixtures and tests; full suite passes: 120 Rust tests and 85 frontend tests.
+
 ## 1.5.1 — 2026-10-15
 
 - Fixed dropdown menus inside dialogs for source, parse status, protocol, and similar selectors being obscured and selected values not displaying; limited dialog height while keeping long lists scrollable, and fixed long project names widening the layout at the minimum window size.
